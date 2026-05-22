@@ -598,7 +598,6 @@ let let_binding_can_be_punned ~binding ~is_ext =
        ; lb_exp
        ; lb_pun= _
        ; lb_attrs= _
-       ; lb_local
        ; lb_is_poly= _
        ; lb_modes_binding
        ; lb_loc= _ }
@@ -613,7 +612,6 @@ let let_binding_can_be_punned ~binding ~is_ext =
     , lb_modes
     , lb_args
     , (lb_pat.ast.ppat_attributes, lb_exp.ast.pexp_attributes)
-    , lb_local
     , lb_modes_binding )
   with
   | ( (* Binding must be inside an extension node (we do not pun operators) *)
@@ -630,8 +628,6 @@ let let_binding_can_be_punned ~binding ~is_ext =
       []
     , (* There must be no attrs on either side *)
       ([], [])
-    , (* This must not be a [let local_] binding *)
-      false
     , (* There cannot be any mode annotations *)
       [] )
     when (* LHS and RHS variable names must be the same *)
@@ -5405,7 +5401,6 @@ and fmt_value_binding c ~mutable_flag ~rec_flag ?(punned_in_output = false)
     ; lb_modes
     ; lb_exp
     ; lb_attrs
-    ; lb_local
     ; lb_is_poly
     ; lb_modes_binding
     ; lb_loc
@@ -5480,7 +5475,6 @@ and fmt_value_binding c ~mutable_flag ~rec_flag ?(punned_in_output = false)
                                   $ fmt_if mutable_flag " mutable"
                                   $ fmt_if rec_flag " rec"
                                   $ fmt_if lb_is_poly " poly_"
-                                  $ fmt_if lb_local " local_"
                                   $ fmt_or pat_has_cmt "@ " " "
                                   $ Params.parens_if
                                       (has_args && has_modes_binding)
