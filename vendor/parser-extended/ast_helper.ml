@@ -82,6 +82,7 @@ module Typ = struct
   let extension ?loc ?attrs a = mk ?loc ?attrs (Ptyp_extension a)
 
   (* Jane Street extension *)
+  let newlayout ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_newlayout (a, b))
   let of_kind ?loc ?attrs a = mk ?loc ?attrs (Ptyp_of_kind a)
   let constr_unboxed ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_constr_unboxed (a, b))
   let quote ?loc ?attrs a = mk ?loc ?attrs (Ptyp_quote a)
@@ -397,8 +398,9 @@ end
 
 module Val = struct
   let mk ?(loc = !default_loc) ?(attrs = []) ?(docs = empty_docs)
-        ?(prim = []) ?(modalities = []) name typ =
+        ?(prim = []) ?(poly = false) ?(modalities = []) name typ =
     {
+     pval_poly = poly;
      pval_name = name;
      pval_type = typ;
      pval_modalities = modalities;
@@ -482,8 +484,10 @@ end
 
 module Vb = struct
   let mk ?(loc = !default_loc) ?(attrs = []) ?(docs = empty_docs)
-        ?(text = []) ?value_constraint ?(modes = []) ~local ~is_pun pat expr =
+        ?(text = []) ?value_constraint ?(modes = []) ~local ~is_pun ~is_poly
+        pat expr =
     {
+     pvb_is_poly = is_poly;
      pvb_pat = pat;
      pvb_expr = expr;
      pvb_constraint=value_constraint;

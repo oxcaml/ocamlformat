@@ -237,6 +237,8 @@ module T = struct
     | Ptyp_extension x -> extension ~loc ~attrs (sub.extension sub x)
 
     (* Jane Street extension *)
+    | Ptyp_newlayout (lvars, t) ->
+        newlayout ~loc ~attrs (List.map (map_loc sub) lvars) (sub.typ sub t)
     | Ptyp_of_kind jkind ->
         of_kind ~loc ~attrs (sub.jkind_annotation sub jkind)
     | Ptyp_constr_unboxed (lid, tl) ->
@@ -931,7 +933,7 @@ let default_mapper =
     type_exception = T.map_type_exception;
     extension_constructor = T.map_extension_constructor;
     value_description =
-      (fun this {pval_name; pval_type; pval_prim; pval_loc;
+      (fun this {pval_name; pval_type; pval_prim; pval_poly; pval_loc;
                  pval_attributes; pval_modalities} ->
         Val.mk
           (map_loc this pval_name)
@@ -939,6 +941,7 @@ let default_mapper =
           ~attrs:(this.attributes this pval_attributes)
           ~loc:(this.location this pval_loc)
           ~prim:(List.map (map_loc this) pval_prim)
+          ~poly:pval_poly
           ~modalities:(this.modalities this pval_modalities)
       );
 
@@ -1019,7 +1022,8 @@ let default_mapper =
       );
 
     value_binding =
-      (fun this {pvb_pat; pvb_expr; pvb_constraint; pvb_is_pun; pvb_attributes; pvb_loc; pvb_modes; pvb_local} ->
+      (fun this {pvb_pat; pvb_expr; pvb_constraint; pvb_is_pun; pvb_is_poly;
+                 pvb_attributes; pvb_loc; pvb_modes; pvb_local} ->
          let map_ct (ct:Parsetree.value_constraint) = match ct with
            | Pvc_constraint {locally_abstract_univars=vars; typ} ->
                Pvc_constraint
@@ -1037,6 +1041,7 @@ let default_mapper =
            (this.expr this pvb_expr)
            ?value_constraint:(Option.map map_ct pvb_constraint)
            ~is_pun:pvb_is_pun
+           ~is_poly:pvb_is_poly
            ~loc:(this.location this pvb_loc)
            ~attrs:(this.attributes this pvb_attributes)
            ~modes:(this.modes this pvb_modes)

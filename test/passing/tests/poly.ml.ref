@@ -1,0 +1,158 @@
+(* Simple let poly_ *)
+let poly_ id x = x
+
+let poly_ id x = x
+
+let poly_ id : 'a. 'a -> 'a = fun x -> x
+
+let poly_ const : 'a 'b. 'a -> 'b -> 'a = fun x _ -> x
+
+let poly_ f : type a. a -> a = fun x -> x
+
+(* Tuple pattern *)
+let poly_ f, g = ((fun a b -> a), fun c d -> d)
+
+(* Multiple bindings *)
+let poly_ const x y = x
+
+and poly_ apply f x = f x
+
+let rec poly_ f x = g x
+
+and poly_ g x = f x
+
+(* Mixed with modes *)
+let poly_ local_ f x = x
+
+let poly_ f (x @ local) = x
+
+let poly_ f : ('a -> 'a) @ portable = fun x -> x
+
+let poly_ (f @ portable) x = x
+
+(* Local let *)
+let f () =
+  let poly_ tuple x y = #(x, y) in
+  let #(a, b) = tuple "a" #1L in
+  let #(c, d) = tuple #42.0 "d" in
+  (a, b, c, d)
+
+let f () =
+  let rec poly_ f x = g x and poly_ g x = f x in
+  (f, g)
+
+(* Attributes *)
+let[@attr] poly_ f x = x
+
+let poly_ f x = x [@@attr]
+
+let[@attr1] poly_ f x = x [@@attr2]
+
+let poly_ f x = x [@@attr]
+
+and poly_ g x = x [@@attr]
+
+let f () =
+  let[@attr] poly_ f x = x in
+  f
+
+(* Comments *)
+let poly_
+    (* c0 *)
+    (* c1 *) f (* c2 *) x (* c3 *) =
+  (* c4 *) x
+
+let poly_ f x = x
+
+(* c5 *)
+and poly_
+    (* c6 *)
+    (* c7 *) g x =
+  x
+
+let f () =
+  let poly_
+      (* c8 *)
+      (* c9 *) f x =
+    x (* c10 *)
+  in
+  f
+
+(* Doc comments *)
+
+(** doc1 *)
+let poly_ f x = x
+
+(** doc2 *)
+let poly_ f x = x
+
+(* Extension *)
+let%ext poly_ f x = x
+
+let f () =
+  let%ext poly_ f x = x in
+  f
+
+let f () =
+  let%ext poly_ x in
+  x
+
+let f () =
+  let%ext poly_ x = x in
+  x
+
+let f () =
+  let%ext poly_ x and poly_ y in
+  x
+
+(* val poly_ *)
+module type S = sig
+  val poly_ f : 'a. 'a -> 'a
+
+  val poly_ g : 'a 'b. 'a -> 'b -> 'c -> 'a
+
+  val poly_ h : 'a -> 'b -> 'a
+
+  val poly_ ( + ) : 'a -> 'b -> 'a
+
+  val poly_ very_long_name_for_a_function :
+    'a. 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h -> 'i -> 'j -> 'k -> 'a
+
+  (* Modalities *)
+  val poly_ i : 'a -> 'a @@ portable
+
+  val poly_ j : 'a -> 'a @ portable @@ portable
+
+  (* Layout variables *)
+  val poly_ k : layout_ x. ('a : x). 'a -> 'a
+
+  val poly_ l : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a
+
+  (* Attributes *)
+  val poly_ k : 'a -> 'a [@@attr]
+
+  val%ext poly_ l : 'a -> 'a
+
+  val%ext poly_ m : 'a -> 'a [@@attr]
+
+  (* Comments *)
+  val poly_ (* c11 *)
+            (* c12 *) n (* c13 *) : (* c14 *) 'a -> 'a
+
+  (* Doc comments *)
+
+  val poly_ o : 'a -> 'a
+  (** doc3 *)
+
+  val poly_ p : 'a -> 'a
+  (** doc4 *)
+end
+
+(* poly_ as an attribute or extension name *)
+let x = [%poly_]
+
+let x = (1 [@poly_])
+
+let x = 1 [@@poly_]
+
+[@@@poly_]

@@ -283,6 +283,10 @@ let rec core_type i ppf x =
   | Ptyp_package pt ->
       line i ppf "Ptyp_package\n";
       package_type i ppf pt
+  | Ptyp_newlayout (lvars, ct) ->
+      line i ppf "Ptyp_newlayout\n";
+      list i string_loc ppf lvars;
+      core_type i ppf ct
   | Ptyp_of_kind jkind ->
       line i ppf "Ptyp_of_kind %a\n" (jkind_annotation (i + 1)) jkind
   | Ptyp_extension (s, arg) ->

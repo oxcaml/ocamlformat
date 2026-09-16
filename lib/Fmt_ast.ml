@@ -535,7 +535,7 @@ let fmt_extension_suffix c ext =
   opt ext (fun name -> str "%" $ fmt_str_loc c name)
 
 let is_arrow_or_poly = function
-  | {ptyp_desc= Ptyp_arrow _ | Ptyp_poly _; _} -> true
+  | {ptyp_desc= Ptyp_arrow _ | Ptyp_poly _ | Ptyp_newlayout _; _} -> true
   | _ -> false
 
 let fmt_assign_arrow c =
@@ -604,6 +604,7 @@ let let_binding_can_be_punned ~binding ~is_ext =
        ; lb_pun= _
        ; lb_attrs= _
        ; lb_local
+       ; lb_is_poly
        ; lb_modes_binding
        ; lb_loc= _ }
         : Sugar.Let_binding.t ) =
@@ -618,6 +619,7 @@ let let_binding_can_be_punned ~binding ~is_ext =
     , lb_args
     , (lb_pat.ast.ppat_attributes, lb_exp.ast.pexp_attributes)
     , lb_local
+    , lb_is_poly
     , lb_modes_binding )
   with
   | ( (* Binding must be inside an extension node (we do not pun operators) *)
@@ -635,6 +637,8 @@ let let_binding_can_be_punned ~binding ~is_ext =
     , (* There must be no attrs on either side *)
       ([], [])
     , (* This must not be a [let local_] binding *)
+      false
+    , (* This must not be a [let poly_] binding *)
       false
     , (* There cannot be any mode annotations *)
       [] )
@@ -1146,6 +1150,12 @@ and fmt_core_type c ?(box = true) ?pro ?(pro_space = true) ?constraint_ctx
             (list a1N "@ "
                (fmt_type_var_with_parenze ~have_tick:true ~tydecl_param_atrs
                   c ) )
+        $ fmt ".@ "
+        $ fmt_core_type c ~box:true ?constraint_modes (sub_typ ~ctx t) )
+  | Ptyp_newlayout (a1N, t) ->
+      hovbox_if box 0
+        ( hovbox_if (not box) 0
+            (fmt "layout_@ " $ list a1N "@ " (fmt_str_loc c))
         $ fmt ".@ "
         $ fmt_core_type c ~box:true ?constraint_modes (sub_typ ~ctx t) )
   | Ptyp_tuple typs ->
@@ -3889,7 +3899,8 @@ and fmt_case c ctx ~first ~last case =
           $ p.close_paren_branch ) )
 
 and fmt_value_description ?ext c ctx vd =
-  let { pval_name= {txt; loc}
+  let { pval_poly
+      ; pval_name= {txt; loc}
       ; pval_type
       ; pval_prim
       ; pval_attributes
@@ -3915,7 +3926,7 @@ and fmt_value_description ?ext c ctx vd =
     $ box_fun_sig_args c 2
         ( str pre
         $ fmt_extension_suffix c ext
-        $ str " "
+        $ str " " $ fmt_if pval_poly "poly_ "
         $ Cmts.fmt c loc
             (wrap_if
                (Std_longident.String_id.is_symbol txt)
@@ -5393,6 +5404,7 @@ and fmt_value_binding c ~mutable_flag ~rec_flag ?(punned_in_output = false)
     ; lb_exp
     ; lb_attrs
     ; lb_local
+    ; lb_is_poly
     ; lb_modes_binding
     ; lb_loc
     ; lb_pun= punned_in_source } =
@@ -5465,6 +5477,7 @@ and fmt_value_binding c ~mutable_flag ~rec_flag ?(punned_in_output = false)
                                   $ fmt_attributes c at_attrs
                                   $ fmt_if mutable_flag " mutable"
                                   $ fmt_if rec_flag " rec"
+                                  $ fmt_if lb_is_poly " poly_"
                                   $ fmt_if lb_local " local_"
                                   $ fmt_or pat_has_cmt "@ " " "
                                   $ Params.parens_if

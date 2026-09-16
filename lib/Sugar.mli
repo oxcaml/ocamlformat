@@ -84,6 +84,7 @@ module Let_binding : sig
     ; lb_pun: bool
     ; lb_attrs: attribute list
     ; lb_local: bool  (** the local_ on the bound value (not RHS) *)
+    ; lb_is_poly: bool  (** [let poly_] *)
     ; lb_modes_binding: modes  (** modes on the bound value (not RHS) *)
     ; lb_loc: Location.t }
 

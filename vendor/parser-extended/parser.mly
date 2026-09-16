@@ -681,6 +681,7 @@ type let_binding =
     lb_expression: expression;
     lb_constraint: value_constraint option;
     lb_is_pun: bool;
+    lb_is_poly: bool;
     lb_modes: mode Location.loc list;
     lb_local: bool;
     lb_attributes: attributes;
@@ -694,12 +695,13 @@ type let_bindings' =
     lbs_rec: rec_flag;
     lbs_extension: string Asttypes.loc option }
 
-let mklb first ~loc (p, e, typ, modes, local, is_pun) attrs =
+let mklb first ~loc (p, e, typ, modes, local, is_pun, is_poly) attrs =
   {
     lb_pattern = p;
     lb_expression = e;
     lb_constraint=typ;
     lb_is_pun = is_pun;
+    lb_is_poly = is_poly;
     lb_modes = modes;
     lb_local = local;
     lb_attributes = attrs;
@@ -732,6 +734,7 @@ let mk_let_bindings { lbs_bindings; lbs_mutable; lbs_rec; lbs_extension } =
            ~docs:(Lazy.force lb.lb_docs)
            ~text:(Lazy.force lb.lb_text)
            ?value_constraint:lb.lb_constraint ~is_pun:lb.lb_is_pun
+           ~is_poly:lb.lb_is_poly
            lb.lb_pattern lb.lb_expression)
       lbs_bindings
   in
@@ -931,6 +934,7 @@ let erase_call_pos_type ~arg_label ~arg_type ~loc =
 %token KIND                   "kind_"
 %token KIND_OF                "kind_of_"
 %token <string> LABEL         "~label:" (* just an example *)
+%token LAYOUT                 "layout_"
 %token LAZY                   "lazy"
 %token LBRACE                 "{"
 %token LBRACELESS             "{<"
@@ -966,6 +970,7 @@ let erase_call_pos_type ~arg_label ~arg_type ~loc =
 %token <string> OPTLABEL      "?label:" (* just an example *)
 %token OR                     "or"
 /* %token PARSER              "parser" */
+%token POLY                   "poly_"
 %token PERCENT                "%"
 %token PLUS                   "+"
 %token PLUSDOT                "+."
@@ -3223,14 +3228,15 @@ let_binding_body_no_punning:
     }
 ;
 let_binding_body:
-  | let_binding_body_no_punning
-      { let p,e,c,modes = $1 in
+  | poly_flag = poly_flag let_binding_body_no_punning
+      { let p,e,c,modes = $2 in
         let islocal, ppat_attributes = split_local_from_attrs p.ppat_attributes in
         let p = {p with ppat_attributes} in
-        (p,e,c,modes,islocal,false) }
+        (p,e,c,modes,islocal,false,poly_flag) }
 /* BEGIN AVOID */
-  | val_ident %prec below_HASH
-      { (mkpatvar ~loc:$loc $1, mkexpvar ~loc:$loc $1, None, [], false, true) }
+  | poly_flag = poly_flag val_ident %prec below_HASH
+      { (mkpatvar ~loc:$loc($2) $2, mkexpvar ~loc:$loc($2) $2, None, [], false,
+         true, poly_flag) }
   (* The production that allows puns is marked so that [make list-parse-errors]
      does not attempt to exploit it. That would be problematic because it
      would then generate bindings such as [let x], which are rejected by the
@@ -3788,6 +3794,7 @@ value_description:
   VAL
   ext = ext
   attrs1 = attributes
+  poly_flag = poly_flag
   id = mkrhs(val_ident)
   COLON
   ty = possibly_poly(core_type)
@@ -3796,7 +3803,7 @@ value_description:
     { let attrs = attrs1 @ attrs2 in
       let loc = make_loc $sloc in
       let docs = symbol_docs $sloc in
-      Val.mk id ty ~modalities ~attrs ~loc ~docs,
+      Val.mk id ty ~poly:poly_flag ~modalities ~attrs ~loc ~docs,
       ext }
 ;
 
@@ -4364,13 +4371,26 @@ with_type_binder:
   nonempty_llist(typevar)
     { $1 }
 ;
+%inline newlayouts:
+  (* : string with_loc list *)
+  nonempty_llist(mkrhs(ident))
+    { $1 }
+;
 %inline poly(X):
   typevar_list DOT X
     { Ptyp_poly($1, $3) }
 ;
+%inline lpoly(X):
+  LAYOUT newlayouts DOT X
+    { let bound_vars, inner_type = $2, $4 in
+      if Erase_jane_syntax.should_erase () then inner_type
+      else mktyp ~loc:$sloc (Ptyp_newlayout (bound_vars, inner_type)) }
+;
 %inline strictly_poly(X):
 | mktyp(poly(X))
     { $1 }
+| lpoly(X) { $1 }
+| lpoly(mktyp(poly(X))) { $1 }
 ;
 
 possibly_poly(X):
@@ -4619,6 +4639,9 @@ strict_function_or_labeled_tuple_type:
       { Ptyp_poly(vars, ty) }
     )
     { $1 }
+  | LPAREN LAYOUT bound_vars = newlayouts DOT inner_type = core_type RPAREN
+    { if Erase_jane_syntax.should_erase () then inner_type
+      else mktyp ~loc:$sloc (Ptyp_newlayout (bound_vars, inner_type)) }
   | ty = tuple_type
     { ty }
 ;
@@ -5240,6 +5263,11 @@ mutable_flag:
     /* empty */                                 { Immutable }
   | MUTABLE                                     { Mutable (make_loc $sloc) }
 ;
+poly_flag:
+    /* empty */                                 { false }
+  | POLY
+      { not (Erase_jane_syntax.should_erase ()) }
+;
 mutable_or_global_flag:
     /* empty */                                 { Immutable, Nothing }
   | MUTABLE                                     { Mutable (make_loc $sloc),
@@ -5346,6 +5374,7 @@ single_attr_id:
   | INCLUDE { "include" }
   | INHERIT { "inherit" }
   | INITIALIZER { "initializer" }
+  | LAYOUT { "layout_" }
   | LAZY { "lazy" }
   | LET { "let" }
   | LOCAL { "local_" }
@@ -5359,6 +5388,7 @@ single_attr_id:
   | OF { "of" }
   | OPEN { "open" }
   | OR { "or" }
+  | POLY { "poly_" }
   | PRIVATE { "private" }
   | REC { "rec" }
   | SIG { "sig" }

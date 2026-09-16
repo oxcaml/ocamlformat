@@ -205,7 +205,7 @@ module Right_square = struct
     match t.ptyp_desc with
     | Ptyp_extension _ -> true
     | Ptyp_variant _ -> true
-    | Ptyp_poly (_, t) -> core_type t
+    | Ptyp_poly (_, t) | Ptyp_newlayout (_, t) -> core_type t
     | Ptyp_arrow (_, t, []) -> core_type t
     | _ -> false
 end
