@@ -1,0 +1,106 @@
+(* let bindings *)
+let poly_ id : layout_ x. ('a : x). 'a -> 'a = fun x -> x
+
+let poly_ id : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a = fun x _ -> x
+
+let f : layout_ x. int -> int = fun x -> x
+
+let f : layout_ x. 'a. 'a -> 'a = fun x -> x
+
+let f : layout_ x. ('a : x). 'a -> 'a @ portable = fun x -> x
+
+let f : (layout_ x. int -> int) -> int = fun g -> g 1
+
+let f : int -> (layout_ x. int -> int) -> int = fun _ g -> g 1
+
+let f : (layout_ x. int) -> int = fun g -> g
+
+let f () =
+  let poly_ id : layout_ x. ('a : x). 'a -> 'a = fun x -> x in
+  id
+
+(* function parameters *)
+let f (g : layout_ x. ('a : x). 'a -> 'a) = g 1
+
+let f = fun (g : layout_ x. ('a : x). 'a -> 'a) -> g 1
+
+let f (type a) (g : layout_ x. ('b : x). a -> 'b -> a) = g
+
+let f ~(g : layout_ x. ('a : x). 'a -> 'a) ?(h : layout_ x. int -> int) = g 1
+
+(* value descriptions *)
+module type S = sig
+  val poly_ f : layout_ x. ('a : x). 'a -> 'a
+
+  val poly_ g : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a
+
+  val poly_ h : layout_ x. 'a -> 'a
+
+  val poly_ i : layout_ x. ('a : x). 'a -> 'a @@ portable
+
+  val f : layout_ x. int -> int
+
+  val f : layout_ x. 'a. 'a -> 'a
+
+  val f : (layout_ x. int -> int) -> int
+
+  val f : int -> (layout_ x. int -> int) -> int
+
+  val f :
+    layout_ very_long_layout_name another_very_long_layout_name.
+    ('a : very_long_layout_name) ('b : another_very_long_layout_name).
+    'a -> 'b -> 'a
+
+  (* Attributes *)
+  val f : layout_ x. int -> int [@@attr]
+
+  val%ext f : layout_ x. int -> int
+
+  (* Comments *)
+  val f : layout_ (* c1 *) x (* c2 *) . (* c3 *) ('a : x). (* c4 *) 'a -> 'a
+
+  (* Doc comments *)
+
+  (** doc1 *)
+  val f : layout_ x. int -> int
+
+  val f : layout_ x. int -> int
+  (** doc2 *)
+end
+
+(* records *)
+type t = { f : layout_ x. ('a : x). 'a -> 'a; mutable g : layout_ x. int -> int }
+
+type t = { f : layout_ x. ('a : x). 'a -> 'a [@attr] }
+
+type t = { f : layout_ x. ('a : x). 'a -> 'a @@ portable }
+
+(* objects and classes *)
+type t = < m : layout_ x. ('a : x). 'a -> 'a; n : int >
+
+class type c = object
+  method m : layout_ x. ('a : x). 'a -> 'a
+end
+
+class c =
+  object
+    method m : layout_ x. ('a : x). 'a -> 'a = fun x -> x
+  end
+
+(* layout_ as an attribute or extension name *)
+let x = [%layout_]
+
+let x = 1 [@layout_]
+
+let x = 1 [@@layout_]
+
+[@@@layout_]
+
+(* The location in [let mutable] is not normalized, so the extended ASTs
+   differ after erasing and the std AST check must erase the jkinds under
+   [layout_] on its own *)
+let f : layout_ x. ('a : x). 'a -> 'a = fun x -> x
+
+let f () =
+  let mutable x = 1 in
+  x

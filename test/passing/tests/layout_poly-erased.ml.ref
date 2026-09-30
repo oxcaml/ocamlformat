@@ -1,0 +1,106 @@
+(* let bindings *)
+let id : 'a. 'a -> 'a = fun x -> x
+
+let id : 'a 'b. 'a -> 'b -> 'a = fun x _ -> x
+
+let f : int -> int = fun x -> x
+
+let f : 'a. 'a -> 'a = fun x -> x
+
+let f : 'a. 'a -> 'a = fun x -> x
+
+let f : (int -> int) -> int = fun g -> g 1
+
+let f : int -> (int -> int) -> int = fun _ g -> g 1
+
+let f : int -> int = fun g -> g
+
+let f () =
+  let id : 'a. 'a -> 'a = fun x -> x in
+  id
+
+(* function parameters *)
+let f (g : 'a. 'a -> 'a) = g 1
+
+let f (g : 'a. 'a -> 'a) = g 1
+
+let f (type a) (g : 'b. a -> 'b -> a) = g
+
+let f ~(g : 'a. 'a -> 'a) ?(h : int -> int) = g 1
+
+(* value descriptions *)
+module type S = sig
+  val f : 'a. 'a -> 'a
+
+  val g : 'a 'b. 'a -> 'b -> 'a
+
+  val h : 'a -> 'a
+
+  val i : 'a. 'a -> 'a
+
+  val f : int -> int
+
+  val f : 'a. 'a -> 'a
+
+  val f : (int -> int) -> int
+
+  val f : int -> (int -> int) -> int
+
+  val f : 'a 'b. 'a -> 'b -> 'a
+
+  (* Attributes *)
+  val f : int -> int [@@attr]
+
+  val%ext f : int -> int
+
+  (* Comments *)
+  val f :
+    (* c1 *)
+    (* c2 *)
+    (* c3 *) 'a. (* c4 *) 'a -> 'a
+
+  (* Doc comments *)
+
+  val f : int -> int
+  (** doc1 *)
+
+  val f : int -> int
+  (** doc2 *)
+end
+
+(* records *)
+type t = {f: 'a. 'a -> 'a; mutable g: int -> int}
+
+type t = {f: 'a. 'a -> 'a [@attr]}
+
+type t = {f: 'a. 'a -> 'a}
+
+(* objects and classes *)
+type t = < m: 'a. 'a -> 'a ; n: int >
+
+class type c = object
+  method m : 'a. 'a -> 'a
+end
+
+class c =
+  object
+    method m : 'a. 'a -> 'a = fun x -> x
+  end
+
+(* layout_ as an attribute or extension name *)
+let x = [%layout_]
+
+let x = (1 [@layout_])
+
+let x = 1 [@@layout_]
+
+[@@@layout_]
+
+(* The location in [let mutable] is not normalized, so the extended ASTs
+   differ after erasing and the std AST check must erase the jkinds under
+   [layout_] on its own *)
+let f : 'a. 'a -> 'a = fun x -> x
+
+let f () =
+  let mutable x = 1 in
+  x

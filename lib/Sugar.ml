@@ -254,6 +254,7 @@ module Let_binding = struct
     ; lb_pun: bool
     ; lb_attrs: attribute list
     ; lb_local: bool
+    ; lb_is_poly: bool
     ; lb_modes_binding: modes
     ; lb_loc: Location.t }
 
@@ -350,6 +351,7 @@ module Let_binding = struct
       ; pvb_expr
       ; pvb_constraint
       ; pvb_is_pun
+      ; pvb_is_poly
       ; pvb_attributes
       ; pvb_loc
       ; pvb_modes
@@ -371,6 +373,7 @@ module Let_binding = struct
     ; lb_pun= pvb_is_pun
     ; lb_attrs= pvb_attributes
     ; lb_local= pvb_local
+    ; lb_is_poly= pvb_is_poly
     ; lb_modes_binding
     ; lb_loc= pvb_loc }
 
@@ -391,6 +394,7 @@ module Let_binding = struct
         ; lb_pun= bo.pbop_is_pun
         ; lb_attrs= []
         ; lb_local= false
+        ; lb_is_poly= false
         ; lb_modes_binding= []
         ; lb_loc= bo.pbop_loc } )
 end

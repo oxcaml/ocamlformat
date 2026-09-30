@@ -393,6 +393,9 @@ let make_mapper conf ~ignore_doc_comments ~erase_jane_syntax =
       | {ptyp_desc= Ptyp_poly (l, t); _} when erase_jane_syntax ->
           let l = List.map l ~f:(fun (n, _) -> (n, None)) in
           {typ with ptyp_desc= Ptyp_poly (l, t)}
+      | {ptyp_desc= Ptyp_newlayout (_, t); _} when erase_jane_syntax ->
+          m.typ m
+            {t with ptyp_attributes= typ.ptyp_attributes @ t.ptyp_attributes}
       | {ptyp_desc= Ptyp_unboxed_tuple ts; _} when erase_jane_syntax ->
           {typ with ptyp_desc= Ptyp_tuple ts}
       | _ -> typ
@@ -523,7 +526,14 @@ let make_mapper conf ~ignore_doc_comments ~erase_jane_syntax =
           {vb with pvb_modes= vb.pvb_modes @ modes; pvb_expr}
       | _ -> vb
     in
+    let vb =
+      if erase_jane_syntax then {vb with pvb_is_poly= false} else vb
+    in
     Ast_mapper.default_mapper.value_binding m vb
+  in
+  let value_description (m : Ast_mapper.mapper) vd =
+    let vd = if erase_jane_syntax then {vd with pval_poly= false} else vd in
+    Ast_mapper.default_mapper.value_description m vd
   in
   let constructor_declaration (m : Ast_mapper.mapper) cd =
     (* CR jane-syntax: This ensures that jane syntax attributes are
@@ -600,6 +610,7 @@ let make_mapper conf ~ignore_doc_comments ~erase_jane_syntax =
   ; modes
   ; modalities
   ; value_binding
+  ; value_description
   ; constructor_declaration
   ; extension_constructor }
 
