@@ -73,3 +73,73 @@ let x = borrow_ (r.x <- x)
 
 (* Comments *)
 let x = (* 1 *) borrow_ (* 2 *) x
+
+let () = (borrow_ t).(i) <- a
+let x = (borrow_ t).(i)
+let () = (borrow_ t).[i] <- a
+let x = (borrow_ t).[i]
+let () = (borrow_ t).{i, j} <- a
+let x = (borrow_ t).{i, j}
+let () = (borrow_ t).%(i) <- a
+let x = (borrow_ t).%(i)
+let () = (borrow_ t).%[i] <- a
+let x = (borrow_ t).%[i]
+let () = (borrow_ t).%{i; j} <- a
+let x = (borrow_ t).%{i; j}
+
+(* Indexing inside a borrow, and borrows in indices and assigned values. *)
+let x = borrow_ t.(i)
+let x = borrow_ (t.(i) <- a)
+let x = t.(borrow_ i)
+let () = t.(i) <- borrow_ a
+let x = t.%(borrow_ i)
+let () = t.%(i) <- borrow_ a
+
+(* Field access, field assignment, and method calls. *)
+let x = (borrow_ r).x
+let x = (borrow_ r).#x
+let () = (borrow_ r).x <- a
+let x = (borrow_ c)#x
+let x = borrow_ r.x
+let x = borrow_ r.#x
+let x = borrow_ c#x
+
+(* Other contexts that require a simple expression. *)
+let x = !(borrow_ r)
+let x = lazy (borrow_ x)
+let x = assert (borrow_ x)
+let x = Some (borrow_ x)
+let x = `Some (borrow_ x)
+let x = (borrow_ f) x
+let x = f (borrow_ x) ~y:(borrow_ y) ?z:(borrow_ z)
+let x = new c (borrow_ x)
+class c = d (borrow_ x)
+
+(* Higher-precedence hash operators need parens on either side. *)
+let x = (borrow_ x) ## y
+let x = x ## (borrow_ y)
+let x = borrow_ (x ## y)
+
+(* Lower-precedence operators and delimiters do not need extra parens. *)
+let x = (borrow_ x) + y
+let x = x + (borrow_ y)
+let x = -(borrow_ x)
+let x = (borrow_ x), (borrow_ y)
+let x = [(borrow_ x); (borrow_ y)]
+let x = {x = (borrow_ x)}
+let x = if borrow_ x then borrow_ y else borrow_ z
+
+(* Non-simple operands still need parens. *)
+let x = borrow_ (f x)
+let x = borrow_ (x + y)
+let x = borrow_ (x; y)
+let x = borrow_ (match x with Some y -> y | None -> z)
+let x = { (borrow_ r) with x = a }
+
+(* Attributes and comments on a borrowed container. *)
+let () = ((borrow_ t) [@foo]).(i) <- a
+let () = (borrow_ (t [@foo])).(i) <- a
+let () = ((* before *) borrow_ (* operand *) t (* after *)).(i) <- a
+
+(* The original report was a structure evaluation item. *)
+;; (borrow_ t).(i) <- a
