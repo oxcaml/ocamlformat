@@ -95,3 +95,12 @@ let x = 1 [@layout_]
 let x = 1 [@@layout_]
 
 [@@@layout_]
+
+(* The location in [let mutable] is not normalized, so the extended ASTs
+   differ after erasing and the std AST check must erase the jkinds under
+   [layout_] on its own *)
+let f : layout_ x. ('a : x). 'a -> 'a = fun x -> x
+
+let f () =
+  let mutable x = 1 in
+  x

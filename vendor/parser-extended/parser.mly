@@ -288,6 +288,10 @@ let mktyp_curry typ =
   if Erase_jane_syntax.should_erase () then typ else
   {typ with ptyp_attributes = curry_attr :: typ.ptyp_attributes}
 
+let mktyp_newlayout ~loc bound_vars inner_type =
+  if Erase_jane_syntax.should_erase () then inner_type
+  else mktyp ~loc (Ptyp_newlayout (bound_vars, inner_type))
+
 let maybe_curry_typ typ =
   match typ.ptyp_desc with
   | Ptyp_arrow _ ->
@@ -4382,9 +4386,7 @@ with_type_binder:
 ;
 %inline lpoly(X):
   LAYOUT newlayouts DOT X
-    { let bound_vars, inner_type = $2, $4 in
-      if Erase_jane_syntax.should_erase () then inner_type
-      else mktyp ~loc:$sloc (Ptyp_newlayout (bound_vars, inner_type)) }
+    { mktyp_newlayout ~loc:$sloc $2 $4 }
 ;
 %inline strictly_poly(X):
 | mktyp(poly(X))
@@ -4640,8 +4642,7 @@ strict_function_or_labeled_tuple_type:
     )
     { $1 }
   | LPAREN LAYOUT bound_vars = newlayouts DOT inner_type = core_type RPAREN
-    { if Erase_jane_syntax.should_erase () then inner_type
-      else mktyp ~loc:$sloc (Ptyp_newlayout (bound_vars, inner_type)) }
+    { mktyp_newlayout ~loc:$sloc bound_vars inner_type }
   | ty = tuple_type
     { ty }
 ;

@@ -394,7 +394,8 @@ let make_mapper conf ~ignore_doc_comments ~erase_jane_syntax =
           let l = List.map l ~f:(fun (n, _) -> (n, None)) in
           {typ with ptyp_desc= Ptyp_poly (l, t)}
       | {ptyp_desc= Ptyp_newlayout (_, t); _} when erase_jane_syntax ->
-          {t with ptyp_attributes= typ.ptyp_attributes @ t.ptyp_attributes}
+          m.typ m
+            {t with ptyp_attributes= typ.ptyp_attributes @ t.ptyp_attributes}
       | {ptyp_desc= Ptyp_unboxed_tuple ts; _} when erase_jane_syntax ->
           {typ with ptyp_desc= Ptyp_tuple ts}
       | _ -> typ

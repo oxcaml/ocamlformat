@@ -1055,8 +1055,7 @@ end = struct
       match ctx.ptyp_desc with
       | Ptyp_extension _ -> ()
       | Ptyp_any | Ptyp_var _ -> assert false
-      | Ptyp_alias (t1, _) | Ptyp_poly (_, t1) | Ptyp_newlayout (_, t1) ->
-          assert (typ == t1)
+      | Ptyp_alias (t1, _) | Ptyp_poly (_, t1) -> assert (typ == t1)
       | Ptyp_arrow (t, t2, _) ->
           assert (List.exists t ~f:(fun x -> typ == x.pap_type) || typ == t2)
       | Ptyp_tuple t1N | Ptyp_unboxed_tuple t1N ->
@@ -1077,7 +1076,8 @@ end = struct
       | Ptyp_of_kind _ -> assert false
       | Ptyp_constr_unboxed (_, t1N) -> assert (List.exists t1N ~f)
       | Ptyp_quote t1 -> assert (typ == t1)
-      | Ptyp_splice t1 -> assert (typ == t1) )
+      | Ptyp_splice t1 -> assert (typ == t1)
+      | Ptyp_newlayout (_, t1) -> assert (typ == t1) )
     | Td {ptype_params; ptype_cstrs; ptype_kind; ptype_manifest; _} ->
         assert (
           List.exists ptype_params ~f:fst_f
@@ -1813,8 +1813,8 @@ end = struct
       | Ptyp_constr (_, _ :: _ :: _) -> Some (Comma, Non)
       | Ptyp_constr _ -> Some (Apply, Non)
       | Ptyp_any | Ptyp_var _ | Ptyp_object _ | Ptyp_class _
-       |Ptyp_variant _ | Ptyp_poly _ | Ptyp_newlayout _ | Ptyp_package _
-       |Ptyp_extension _ | Ptyp_of_kind _ | Ptyp_quote _ | Ptyp_splice _ ->
+       |Ptyp_variant _ | Ptyp_poly _ | Ptyp_package _ | Ptyp_extension _
+       |Ptyp_of_kind _ | Ptyp_quote _ | Ptyp_splice _ | Ptyp_newlayout _ ->
           None
       | Ptyp_constr_unboxed (_, _ :: _ :: _) -> Some (Comma, Non)
       | Ptyp_constr_unboxed _ -> Some (Apply, Non) )
@@ -1948,11 +1948,10 @@ end = struct
       | Ptyp_tuple _ | Ptyp_unboxed_tuple _ -> Some InfixOp3
       | Ptyp_alias _ -> Some As
       | Ptyp_any | Ptyp_var _ | Ptyp_constr _ | Ptyp_object _
-       |Ptyp_class _ | Ptyp_variant _ | Ptyp_poly _ | Ptyp_newlayout _
-       |Ptyp_extension _ ->
+       |Ptyp_class _ | Ptyp_variant _ | Ptyp_poly _ | Ptyp_extension _ ->
           None
-      | Ptyp_constr_unboxed _ | Ptyp_of_kind _ | Ptyp_quote _ | Ptyp_splice _
-        ->
+      | Ptyp_constr_unboxed _ | Ptyp_of_kind _ | Ptyp_quote _
+      | Ptyp_splice _ | Ptyp_newlayout _ ->
           None )
     | Td _ -> None
     | Tyv _ -> None
@@ -2192,13 +2191,11 @@ end = struct
       | _ -> true )
     | Fp {pparam_desc= Pparam_val (_, _, _, _); _}, Ppat_cons _ -> true
     | Pat {ppat_desc= Ppat_construct _; _}, Ppat_cons _ -> true
-    | ( Fp _
-      , Ppat_constraint
-          (_, Some {ptyp_desc= Ptyp_poly _ | Ptyp_newlayout _; _}, _) ) ->
+    | Fp _, Ppat_constraint (_, Some {ptyp_desc= Ptyp_poly _; _}, _) -> true
+    | _, Ppat_constraint (_, Some {ptyp_desc= Ptyp_poly _; _}, _) -> false
+    | Fp _, Ppat_constraint (_, Some {ptyp_desc= Ptyp_newlayout _; _}, _) ->
         true
-    | ( _
-      , Ppat_constraint
-          (_, Some {ptyp_desc= Ptyp_poly _ | Ptyp_newlayout _; _}, _) ) ->
+    | _, Ppat_constraint (_, Some {ptyp_desc= Ptyp_newlayout _; _}, _) ->
         false
     | ( Exp {pexp_desc= Pexp_letop _; _}
       , ( Ppat_construct (_, Some _)

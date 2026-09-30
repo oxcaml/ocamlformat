@@ -96,18 +96,17 @@ let f () =
 ;;
 
 let f () =
-  let%ext poly_ x = x in
+  let%ext poly_ x in
   x
 ;;
 
 let f () =
-  let%ext poly_ x = x in
+  let%ext poly_ x in
   x
 ;;
 
 let f () =
-  let%ext poly_ x = x
-  and poly_ y = y in
+  let%ext poly_ x and poly_ y in
   x
 ;;
 

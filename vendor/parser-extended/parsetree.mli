@@ -226,11 +226,7 @@ and core_type_desc =
   | Ptyp_extension of extension  (** [[%id]]. *)
 
   (* Jane Street extension *)
-  | Ptyp_newlayout of string loc list * core_type
-      (** [layout_ a b c. T]
-
-           Introduces locally abstract layouts into scope.
-         *)
+  | Ptyp_newlayout of string loc list * core_type (** [layout_ a b c. T] *)
   | Ptyp_of_kind of jkind_annotation (** [(type : k)] *)
   | Ptyp_constr_unboxed of Longident.t loc * core_type list
   | Ptyp_quote of core_type (** [<[T]>] *)
