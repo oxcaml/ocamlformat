@@ -81,3 +81,122 @@ let x =
   (* 1 *)
   (* 2 *)
   x
+
+let () = t.(i) <- a
+
+let x = t.(i)
+
+let () = t.[i] <- a
+
+let x = t.[i]
+
+let () = t.{i, j} <- a
+
+let x = t.{i, j}
+
+let () = t.%(i) <- a
+
+let x = t.%(i)
+
+let () = t.%[i] <- a
+
+let x = t.%[i]
+
+let () = t.%{i; j} <- a
+
+let x = t.%{i; j}
+
+(* Indexing inside a borrow, and borrows in indices and assigned values. *)
+let x = t.(i)
+
+let x = t.(i) <- a
+
+let x = t.(i)
+
+let () = t.(i) <- a
+
+let x = t.%(i)
+
+let () = t.%(i) <- a
+
+(* Field access, field assignment, and method calls. *)
+let x = r.x
+
+let x = r.x
+
+let () = r.x <- a
+
+let x = c#x
+
+let x = r.x
+
+let x = r.x
+
+let x = c#x
+
+(* Other contexts that require a simple expression. *)
+let x = !r
+
+let x = lazy x
+
+let x = assert x
+
+let x = Some x
+
+let x = `Some x
+
+let x = f x
+
+let x = f x ~y ?z
+
+let x = new c x
+
+class c = d x
+
+(* Higher-precedence hash operators need parens on either side. *)
+let x = x##y
+
+let x = x##y
+
+let x = x##y
+
+(* Lower-precedence operators and delimiters do not need extra parens. *)
+let x = x + y
+
+let x = x + y
+
+let x = -x
+
+let x = (x, y)
+
+let x = [x; y]
+
+let x = {x}
+
+let x = if x then y else z
+
+(* Non-simple operands still need parens. *)
+let x = f x
+
+let x = x + y
+
+let x = x ; y
+
+let x = match x with Some y -> y | None -> z
+
+let x = {r with x= a}
+
+(* Attributes and comments on a borrowed container. *)
+let () = (t [@foo]).(i) <- a
+
+let () = (t [@foo]).(i) <- a
+
+let () =
+  (* before *)
+  (* operand *)
+  t (* after *).(i) <- a
+
+(* The original report was a structure evaluation item. *)
+;;
+
+t.(i) <- a

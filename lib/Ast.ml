@@ -2000,7 +2000,7 @@ end = struct
         | '#', _ -> Some HashOp
         | _ -> Some Apply )
       | Pexp_apply _ -> Some Apply
-      | Pexp_assert _ | Pexp_lazy _ | Pexp_for _
+      | Pexp_assert _ | Pexp_lazy _ | Pexp_borrow _ | Pexp_for _
        |Pexp_variant (_, Some _)
        |Pexp_while _ | Pexp_new _ | Pexp_object _ ->
           Some Apply
@@ -2599,7 +2599,7 @@ end = struct
         false
     | Exp {pexp_desc= Pexp_stack _ | Pexp_borrow _; _}, _ -> true
     | ( Exp {pexp_desc= Pexp_apply _ | Pexp_construct _; _}
-      , {pexp_desc= Pexp_stack _ | Pexp_borrow _; _} ) ->
+      , {pexp_desc= Pexp_stack _; _} ) ->
         true
     | ( Str
           { pstr_desc=
