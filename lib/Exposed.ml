@@ -206,6 +206,7 @@ module Right_square = struct
     | Ptyp_extension _ -> true
     | Ptyp_variant _ -> true
     | Ptyp_poly (_, t) -> core_type t
+    | Ptyp_newlayout (_, t) -> core_type t
     | Ptyp_arrow (_, t, []) -> core_type t
     | _ -> false
 end
