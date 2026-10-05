@@ -1951,7 +1951,7 @@ end = struct
        |Ptyp_class _ | Ptyp_variant _ | Ptyp_poly _ | Ptyp_extension _ ->
           None
       | Ptyp_constr_unboxed _ | Ptyp_of_kind _ | Ptyp_quote _
-      | Ptyp_splice _ | Ptyp_newlayout _ ->
+       |Ptyp_splice _ | Ptyp_newlayout _ ->
           None )
     | Td _ -> None
     | Tyv _ -> None

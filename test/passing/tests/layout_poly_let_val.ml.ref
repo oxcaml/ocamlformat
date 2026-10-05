@@ -1,7 +1,7 @@
 (* Simple let poly_ *)
 let poly_ id x = x
 
-let poly_ id = fun x -> x
+let poly_ id x = x
 
 let poly_ id : 'a. 'a -> 'a = fun x -> x
 
@@ -10,13 +10,15 @@ let poly_ const : 'a 'b. 'a -> 'b -> 'a = fun x _ -> x
 let poly_ f : type a. a -> a = fun x -> x
 
 (* Tuple pattern *)
-let poly_ (f, g) = ((fun a b -> a), (fun c d -> d))
+let poly_ f, g = ((fun a b -> a), fun c d -> d)
 
 (* Multiple bindings *)
 let poly_ const x y = x
+
 and poly_ apply f x = f x
 
 let rec poly_ f x = g x
+
 and poly_ g x = f x
 
 (* Mixed with modes *)
@@ -47,6 +49,7 @@ let poly_ f x = x [@@attr]
 let[@attr1] poly_ f x = x [@@attr2]
 
 let poly_ f x = x [@@attr]
+
 and poly_ g x = x [@@attr]
 
 let f () =
@@ -54,14 +57,25 @@ let f () =
   f
 
 (* Comments *)
-let (* c0 *) poly_ (* c1 *) f (* c2 *) x (* c3 *) = (* c4 *) x
+let poly_
+    (* c0 *)
+    (* c1 *) f (* c2 *) x (* c3 *) =
+  (* c4 *) x
 
 let poly_ f x = x
+
 (* c5 *)
-and (* c6 *) poly_ (* c7 *) g x = x
+and poly_
+    (* c6 *)
+    (* c7 *) g x =
+  x
 
 let f () =
-  let (* c8 *) poly_ (* c9 *) f x = x (* c10 *) in
+  let poly_
+      (* c8 *)
+      (* c9 *) f x =
+    x (* c10 *)
+  in
   f
 
 (* Doc comments *)
@@ -69,8 +83,8 @@ let f () =
 (** doc1 *)
 let poly_ f x = x
 
-let poly_ f x = x
 (** doc2 *)
+let poly_ f x = x
 
 (* Extension *)
 let%ext poly_ f x = x
@@ -109,11 +123,6 @@ module type S = sig
 
   val poly_ j : 'a -> 'a @ portable @@ portable
 
-  (* Layout variables *)
-  val poly_ k : layout_ x. ('a : x). 'a -> 'a
-
-  val poly_ l : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a
-
   (* Attributes *)
   val poly_ k : 'a -> 'a [@@attr]
 
@@ -122,12 +131,13 @@ module type S = sig
   val%ext poly_ m : 'a -> 'a [@@attr]
 
   (* Comments *)
-  val (* c11 *) poly_ (* c12 *) n (* c13 *) : (* c14 *) 'a -> 'a
+  val poly_ (* c11 *)
+            (* c12 *) n (* c13 *) : (* c14 *) 'a -> 'a
 
   (* Doc comments *)
 
-  (** doc3 *)
   val poly_ o : 'a -> 'a
+  (** doc3 *)
 
   val poly_ p : 'a -> 'a
   (** doc4 *)
@@ -136,7 +146,7 @@ end
 (* poly_ as an attribute or extension name *)
 let x = [%poly_]
 
-let x = 1 [@poly_]
+let x = (1 [@poly_])
 
 let x = 1 [@@poly_]
 

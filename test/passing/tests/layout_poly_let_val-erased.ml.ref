@@ -123,11 +123,6 @@ module type S = sig
 
   val j : 'a -> 'a
 
-  (* Layout variables *)
-  val k : 'a. 'a -> 'a
-
-  val l : 'a 'b. 'a -> 'b -> 'a
-
   (* Attributes *)
   val k : 'a -> 'a [@@attr]
 

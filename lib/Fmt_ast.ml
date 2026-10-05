@@ -3923,8 +3923,7 @@ and fmt_value_description ?ext c ctx vd =
     $ box_fun_sig_args c 2
         ( str pre
         $ fmt_extension_suffix c ext
-        $ str " "
-        $ fmt_if pval_poly "poly_ "
+        $ str " " $ fmt_if pval_poly "poly_ "
         $ Cmts.fmt c loc
             (wrap_if
                (Std_longident.String_id.is_symbol txt)

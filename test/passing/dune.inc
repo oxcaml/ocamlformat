@@ -7881,55 +7881,109 @@
  (deps tests/.ocamlformat )
  (package ocamlformat)
  (action
-  (with-stdout-to layout_poly-erased.ml.stdout
-   (with-stderr-to layout_poly-erased.ml.stderr
-     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --erase-jane-syntax --max-iters=3 %{dep:tests/layout_poly.ml}))))))
+  (with-stdout-to layout_poly_let_val-erased.ml.stdout
+   (with-stderr-to layout_poly_let_val-erased.ml.stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --erase-jane-syntax --max-iters=3 %{dep:tests/layout_poly_let_val.ml}))))))
 
 (rule
  (alias runtest)
  (package ocamlformat)
- (action (diff tests/layout_poly-erased.ml.ref layout_poly-erased.ml.stdout)))
+ (action (diff tests/layout_poly_let_val-erased.ml.ref layout_poly_let_val-erased.ml.stdout)))
 
 (rule
  (alias runtest)
  (package ocamlformat)
- (action (diff tests/layout_poly-erased.ml.err layout_poly-erased.ml.stderr)))
+ (action (diff tests/layout_poly_let_val-erased.ml.err layout_poly_let_val-erased.ml.stderr)))
 
 (rule
  (deps tests/.ocamlformat )
  (package ocamlformat)
  (action
-  (with-stdout-to layout_poly.ml.stdout
-   (with-stderr-to layout_poly.ml.stderr
-     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check %{dep:tests/layout_poly.ml}))))))
+  (with-stdout-to layout_poly_let_val.ml.stdout
+   (with-stderr-to layout_poly_let_val.ml.stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --max-iters=5 %{dep:tests/layout_poly_let_val.ml}))))))
 
 (rule
  (alias runtest)
  (package ocamlformat)
- (action (diff tests/layout_poly.ml.ref layout_poly.ml.stdout)))
+ (action (diff tests/layout_poly_let_val.ml.ref layout_poly_let_val.ml.stdout)))
 
 (rule
  (alias runtest)
  (package ocamlformat)
- (action (diff tests/layout_poly.ml.err layout_poly.ml.stderr)))
+ (action (diff tests/layout_poly_let_val.ml.err layout_poly_let_val.ml.stderr)))
 
 (rule
  (deps tests/.ocamlformat )
  (package ocamlformat)
  (action
-  (with-stdout-to layout_poly.ml.js-stdout
-   (with-stderr-to layout_poly.ml.js-stderr
-     (setenv TERM dumb (run %{bin:ocamlformat} --profile=janestreet --enable-outside-detected-project --disable-conf-files %{dep:tests/layout_poly.ml}))))))
+  (with-stdout-to layout_poly_let_val.ml.js-stdout
+   (with-stderr-to layout_poly_let_val.ml.js-stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --profile=janestreet --enable-outside-detected-project --disable-conf-files %{dep:tests/layout_poly_let_val.ml}))))))
 
 (rule
  (alias runtest)
  (package ocamlformat)
- (action (diff tests/layout_poly.ml.js-ref layout_poly.ml.js-stdout)))
+ (action (diff tests/layout_poly_let_val.ml.js-ref layout_poly_let_val.ml.js-stdout)))
 
 (rule
  (alias runtest)
  (package ocamlformat)
- (action (diff tests/layout_poly.ml.js-err layout_poly.ml.js-stderr)))
+ (action (diff tests/layout_poly_let_val.ml.js-err layout_poly_let_val.ml.js-stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
+  (with-stdout-to layout_poly_types-erased.ml.stdout
+   (with-stderr-to layout_poly_types-erased.ml.stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --erase-jane-syntax --max-iters=3 %{dep:tests/layout_poly_types.ml}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/layout_poly_types-erased.ml.ref layout_poly_types-erased.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/layout_poly_types-erased.ml.err layout_poly_types-erased.ml.stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
+  (with-stdout-to layout_poly_types.ml.stdout
+   (with-stderr-to layout_poly_types.ml.stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --max-iters=3 %{dep:tests/layout_poly_types.ml}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/layout_poly_types.ml.ref layout_poly_types.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/layout_poly_types.ml.err layout_poly_types.ml.stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
+  (with-stdout-to layout_poly_types.ml.js-stdout
+   (with-stderr-to layout_poly_types.ml.js-stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --profile=janestreet --enable-outside-detected-project --disable-conf-files %{dep:tests/layout_poly_types.ml}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/layout_poly_types.ml.js-ref layout_poly_types.ml.js-stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/layout_poly_types.ml.js-err layout_poly_types.ml.js-stderr)))
 
 (rule
  (deps tests/.ocamlformat )
@@ -10455,60 +10509,6 @@
  (alias runtest)
  (package ocamlformat)
  (action (diff tests/parens_tuple_patterns.ml.js-err parens_tuple_patterns.ml.js-stderr)))
-
-(rule
- (deps tests/.ocamlformat )
- (package ocamlformat)
- (action
-  (with-stdout-to poly-erased.ml.stdout
-   (with-stderr-to poly-erased.ml.stderr
-     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --erase-jane-syntax --max-iters=3 %{dep:tests/poly.ml}))))))
-
-(rule
- (alias runtest)
- (package ocamlformat)
- (action (diff tests/poly-erased.ml.ref poly-erased.ml.stdout)))
-
-(rule
- (alias runtest)
- (package ocamlformat)
- (action (diff tests/poly-erased.ml.err poly-erased.ml.stderr)))
-
-(rule
- (deps tests/.ocamlformat )
- (package ocamlformat)
- (action
-  (with-stdout-to poly.ml.stdout
-   (with-stderr-to poly.ml.stderr
-     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --max-iters=5 %{dep:tests/poly.ml}))))))
-
-(rule
- (alias runtest)
- (package ocamlformat)
- (action (diff tests/poly.ml.ref poly.ml.stdout)))
-
-(rule
- (alias runtest)
- (package ocamlformat)
- (action (diff tests/poly.ml.err poly.ml.stderr)))
-
-(rule
- (deps tests/.ocamlformat )
- (package ocamlformat)
- (action
-  (with-stdout-to poly.ml.js-stdout
-   (with-stderr-to poly.ml.js-stderr
-     (setenv TERM dumb (run %{bin:ocamlformat} --profile=janestreet --enable-outside-detected-project --disable-conf-files %{dep:tests/poly.ml}))))))
-
-(rule
- (alias runtest)
- (package ocamlformat)
- (action (diff tests/poly.ml.js-ref poly.ml.js-stdout)))
-
-(rule
- (alias runtest)
- (package ocamlformat)
- (action (diff tests/poly.ml.js-err poly.ml.js-stderr)))
 
 (rule
  (deps tests/.ocamlformat )

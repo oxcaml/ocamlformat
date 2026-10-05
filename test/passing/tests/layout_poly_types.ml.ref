@@ -1,7 +1,7 @@
 (* let bindings *)
-let poly_ id : layout_ x. ('a : x). 'a -> 'a = fun x -> x
+let id : layout_ x. ('a : x). 'a -> 'a = fun x -> x
 
-let poly_ id : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a = fun x _ -> x
+let id : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a = fun x _ -> x
 
 let f : layout_ x. int -> int = fun x -> x
 
@@ -16,13 +16,13 @@ let f : int -> (layout_ x. int -> int) -> int = fun _ g -> g 1
 let f : (layout_ x. int) -> int = fun g -> g
 
 let f () =
-  let poly_ id : layout_ x. ('a : x). 'a -> 'a = fun x -> x in
+  let id : layout_ x. ('a : x). 'a -> 'a = fun x -> x in
   id
 
 (* function parameters *)
 let f (g : layout_ x. ('a : x). 'a -> 'a) = g 1
 
-let f = fun (g : layout_ x. ('a : x). 'a -> 'a) -> g 1
+let f (g : layout_ x. ('a : x). 'a -> 'a) = g 1
 
 let f (type a) (g : layout_ x. ('b : x). a -> 'b -> a) = g
 
@@ -30,13 +30,11 @@ let f ~(g : layout_ x. ('a : x). 'a -> 'a) ?(h : layout_ x. int -> int) = g 1
 
 (* value descriptions *)
 module type S = sig
-  val poly_ f : layout_ x. ('a : x). 'a -> 'a
+  val f : layout_ x. ('a : x). 'a -> 'a
 
-  val poly_ g : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a
+  val g : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a
 
-  val poly_ h : layout_ x. 'a -> 'a
-
-  val poly_ i : layout_ x. ('a : x). 'a -> 'a @@ portable
+  val h : layout_ x. ('a : x). 'a -> 'a @@ portable
 
   val f : layout_ x. int -> int
 
@@ -57,26 +55,34 @@ module type S = sig
   val%ext f : layout_ x. int -> int
 
   (* Comments *)
-  val f : layout_ (* c1 *) x (* c2 *) . (* c3 *) ('a : x). (* c4 *) 'a -> 'a
+  val (* a *) f (* b *) :
+    (* c *)
+    layout_ (* d *) x (* e *). (* f *) ('a : x). 'a -> 'a
+
+  val (* a *) f (* b *) :
+    (* c *)
+    layout_ (* d *) x (* e *) y (* f *).
+    (* g *)
+    ('a : x) ('b : y). 'a -> 'b -> #('a * 'b)
 
   (* Doc comments *)
 
-  (** doc1 *)
   val f : layout_ x. int -> int
+  (** doc1 *)
 
   val f : layout_ x. int -> int
   (** doc2 *)
 end
 
 (* records *)
-type t = { f : layout_ x. ('a : x). 'a -> 'a; mutable g : layout_ x. int -> int }
+type t = {f: layout_ x. ('a : x). 'a -> 'a; mutable g: layout_ x. int -> int}
 
-type t = { f : layout_ x. ('a : x). 'a -> 'a [@attr] }
+type t = {f: layout_ x. ('a : x). 'a -> 'a [@attr]}
 
-type t = { f : layout_ x. ('a : x). 'a -> 'a @@ portable }
+type t = {f: layout_ x. ('a : x). 'a -> 'a @@ portable}
 
 (* objects and classes *)
-type t = < m : layout_ x. ('a : x). 'a -> 'a; n : int >
+type t = < m: layout_ x. ('a : x). 'a -> 'a ; n: int >
 
 class type c = object
   method m : layout_ x. ('a : x). 'a -> 'a
@@ -90,7 +96,7 @@ class c =
 (* layout_ as an attribute or extension name *)
 let x = [%layout_]
 
-let x = 1 [@layout_]
+let x = (1 [@layout_])
 
 let x = 1 [@@layout_]
 

@@ -1,6 +1,6 @@
 (* let bindings *)
-let poly_ id : layout_ x. ('a : x). 'a -> 'a = fun x -> x
-let poly_ id : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a = fun x _ -> x
+let id : layout_ x. ('a : x). 'a -> 'a = fun x -> x
+let id : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a = fun x _ -> x
 let f : layout_ x. int -> int = fun x -> x
 let f : layout_ x. 'a. 'a -> 'a = fun x -> x
 let f : layout_ x. ('a : x). 'a -> 'a @ portable = fun x -> x
@@ -9,7 +9,7 @@ let f : int -> (layout_ x. int -> int) -> int = fun _ g -> g 1
 let f : (layout_ x. int) -> int = fun g -> g
 
 let f () =
-  let poly_ id : layout_ x. ('a : x). 'a -> 'a = fun x -> x in
+  let id : layout_ x. ('a : x). 'a -> 'a = fun x -> x in
   id
 ;;
 
@@ -21,10 +21,9 @@ let f ~(g : layout_ x. ('a : x). 'a -> 'a) ?(h : layout_ x. int -> int) = g 1
 
 (* value descriptions *)
 module type S = sig
-  val poly_ f : layout_ x. ('a : x). 'a -> 'a
-  val poly_ g : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a
-  val poly_ h : layout_ x. 'a -> 'a
-  val poly_ i : layout_ x. ('a : x). 'a -> 'a @@ portable
+  val f : layout_ x. ('a : x). 'a -> 'a
+  val g : layout_ x y. ('a : x) ('b : y). 'a -> 'b -> 'a
+  val h : layout_ x. ('a : x). 'a -> 'a @@ portable
   val f : layout_ x. int -> int
   val f : layout_ x. 'a. 'a -> 'a
   val f : (layout_ x. int -> int) -> int
@@ -40,7 +39,15 @@ module type S = sig
   val%ext f : layout_ x. int -> int
 
   (* Comments *)
-  val f : layout_ (* c1 *) x (* c2 *). (* c3 *) ('a : x). (* c4 *) 'a -> 'a
+  val (* a *) f (* b *) : (* c *) layout_ (* d *) x (* e *). (* f *) ('a : x). 'a -> 'a
+
+  val (* a *)
+    f
+    (* b *)
+    : (* c *)
+    layout_ (* d *) x (* e *) y (* f *).
+    (* g *)
+    ('a : x) ('b : y). 'a -> 'b -> #('a * 'b)
 
   (* Doc comments *)
 

@@ -34,9 +34,7 @@ module type S = sig
 
   val g : 'a 'b. 'a -> 'b -> 'a
 
-  val h : 'a -> 'a
-
-  val i : 'a. 'a -> 'a
+  val h : 'a. 'a -> 'a
 
   val f : int -> int
 
@@ -54,10 +52,19 @@ module type S = sig
   val%ext f : int -> int
 
   (* Comments *)
-  val f :
-    (* c1 *)
-    (* c2 *)
-    (* c3 *) 'a. (* c4 *) 'a -> 'a
+  val (* a *) f (* b *) :
+    (* c *)
+    (* d *)
+    (* e *)
+    (* f *) 'a. 'a -> 'a
+
+  val (* a *) f (* b *) :
+    (* c *)
+    (* d *)
+    (* e *)
+    (* f *)
+    (* g *)
+    'a 'b. 'a -> 'b -> 'a * 'b
 
   (* Doc comments *)
 
