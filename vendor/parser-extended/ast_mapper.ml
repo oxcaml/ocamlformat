@@ -589,10 +589,9 @@ module E = struct
         let mut = Flag.map_mutable sub mut in
         let expr = sub.expr sub expr in
         Baccess_array (mut, idx_kind, expr)
-    | Baccess_block (mut, expr) ->
-        let mut = Flag.map_mutable sub mut in
+    | Baccess_block (access, expr) ->
         let expr = sub.expr sub expr in
-        Baccess_block (mut, expr)
+        Baccess_block (access, expr)
 
   let map_unboxed_access sub = function
     | Uaccess_unboxed_field lid -> Uaccess_unboxed_field (map_loc sub lid)

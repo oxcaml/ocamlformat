@@ -2196,11 +2196,12 @@ and fmt_block_access c ctx ba =
         ( dot $ suff
         $ Params.parens c.conf
             (fmt "@;<0 0>" $ fmt_expression c (sub_exp ~ctx expr)) )
-  | Baccess_block (mut, expr) ->
+  | Baccess_block (access, expr) ->
       let dot =
-        match mut with
-        | Mutable _ -> str ".idx_mut"
-        | Immutable -> str ".idx_imm"
+        match access with
+        | Immutable_access -> str ".idx_imm"
+        | Mutable_access -> str ".idx_mut"
+        | Atomic_access -> str ".idx_atomic"
       in
       dot $ Params.parens c.conf (fmt_expression c (sub_exp ~ctx expr))
 

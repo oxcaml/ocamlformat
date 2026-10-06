@@ -3003,8 +3003,9 @@ block_access:
       | "S" -> Baccess_array (Mutable Location.none, Index_unboxed_int16, i)
       | "s" -> Baccess_array (Mutable Location.none, Index_unboxed_int8, i)
       | "n" -> Baccess_array (Mutable Location.none, Index_unboxed_nativeint, i)
-      | "idx_imm" -> Baccess_block (Immutable, i)
-      | "idx_mut" -> Baccess_block (Mutable Location.none, i)
+      | "idx_imm" -> Baccess_block (Immutable_access, i)
+      | "idx_mut" -> Baccess_block (Mutable_access, i)
+      | "idx_atomic" -> Baccess_block (Atomic_access, i)
       | _ ->
         raise Syntaxerr.(Error(Block_access_bad_paren(make_loc $loc(_p))))
     }

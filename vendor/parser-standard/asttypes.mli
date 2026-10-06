@@ -40,6 +40,8 @@ type private_flag = Private | Public
 
 type mutable_flag = Immutable | Mutable
 
+type access_flag = Immutable_access | Mutable_access | Atomic_access
+
 type virtual_flag = Virtual | Concrete
 
 type override_flag = Override | Fresh

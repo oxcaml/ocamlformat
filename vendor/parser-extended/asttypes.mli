@@ -38,6 +38,8 @@ type private_flag = Private of Location.t | Public
 
 type mutable_flag = Immutable | Mutable of Location.t
 
+type access_flag = Immutable_access | Mutable_access | Atomic_access
+
 type virtual_flag = Virtual of Location.t | Concrete
 
 type private_virtual = {pv_priv: Location.t option; pv_virt: Location.t option}

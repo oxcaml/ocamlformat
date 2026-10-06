@@ -83,6 +83,12 @@ let fmt_mutable_flag f x =
   | Immutable -> fprintf f "Immutable"
   | Mutable -> fprintf f "Mutable"
 
+let fmt_access_flag f x =
+  match x with
+  | Immutable_access -> fprintf f "Immutable_access"
+  | Mutable_access -> fprintf f "Mutable_access"
+  | Atomic_access -> fprintf f "Atomic_access"
+
 let fmt_virtual_flag f x =
   match x with
   | Virtual -> fprintf f "Virtual"
@@ -506,9 +512,9 @@ and expression i ppf x =
 and block_access i ppf = function
   | Baccess_field lid ->
       line i ppf "Baccess_field %a\n" fmt_longident_loc lid
-  | Baccess_block (mut, idx) ->
+  | Baccess_block (access, idx) ->
       line i ppf "Baccess_block %a\n"
-        fmt_mutable_flag mut;
+        fmt_access_flag access;
       expression i ppf idx
 
 and unboxed_access i ppf = function

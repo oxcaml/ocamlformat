@@ -147,3 +147,20 @@ let idx_mut x =
             (* 40 *)
             (* 41 *)))
 ;;
+
+(* atomic *)
+
+let idx_atomic x = (.idx_atomic(x))
+let idx_atomic x = (.idx_atomic(x).#foo.#bar)
+let idx_atomic x = (.idx_atomic(if x then y else z))
+let idx_atomic x = !(.idx_atomic(x))
+let idx_atomic x = (.idx_atomic(x)) [@attr]
+
+let idx_atomic x =
+  (.idx_atomic((* 42 *)
+               (* 43 *)
+               (* 44 *)
+               x
+               (* 45 *)
+               (* 46 *)))
+;;
