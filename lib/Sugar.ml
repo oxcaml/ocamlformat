@@ -28,44 +28,6 @@ let check_local_attr_and_reloc_cmts cmts attrs loc =
       (rest, true)
   | _, _ -> (attrs, false)
 
-(* This function pulls apart an arrow type, pulling out local attributes into
-   bools and producing a context without those attributes. This addresses the
-   problem that we need to remove the local attributes so that they can be
-   printed specially, and that the context needs to be updated to reflect
-   this to pass some internal ocamlformat sanity checks. It's not the
-   cleanest solution in a vacuum, but is perhaps the one that will cause the
-   fewest merge conflicts in the future. *)
-let decompose_arrow cmts ctx ctl (ct2, m2) =
-  let pull_out_local ap =
-    let ptyp_attributes, local =
-      check_local_attr_and_reloc_cmts cmts ap.pap_type.ptyp_attributes
-        ap.pap_type.ptyp_loc
-    in
-    ({ap with pap_type= {ap.pap_type with ptyp_attributes}}, local)
-  in
-  let args = List.map ~f:pull_out_local ctl in
-  let ((res_ap, _) as res) =
-    let ptyp_attributes, local =
-      check_local_attr_and_reloc_cmts cmts ct2.ptyp_attributes ct2.ptyp_loc
-    in
-    let ap =
-      { pap_label= Nolabel
-      ; pap_loc= ct2.ptyp_loc
-      ; pap_type= {ct2 with ptyp_attributes}
-      ; pap_modes= m2 }
-    in
-    (ap, local)
-  in
-  let ctx_typ =
-    Ptyp_arrow (List.map ~f:fst args, res_ap.pap_type, res_ap.pap_modes)
-  in
-  let ctx =
-    match ctx with
-    | Typ cty -> Typ {cty with ptyp_desc= ctx_typ}
-    | _ -> assert false
-  in
-  (args, res, ctx)
-
 let fun_ cmts ?(will_keep_first_ast_node = true) xexp =
   let rec fun_ ?(will_keep_first_ast_node = false) ({ast= exp; _} as xexp) =
     let ctx = Exp exp in
@@ -253,7 +215,6 @@ module Let_binding = struct
     ; lb_exp: expression xt
     ; lb_pun: bool
     ; lb_attrs: attribute list
-    ; lb_local: bool
     ; lb_is_poly: bool
     ; lb_modes_binding: modes
     ; lb_loc: Location.t }
@@ -359,6 +320,10 @@ module Let_binding = struct
     let lb_pat = sub_pat ~ctx pvb_pat
     and lb_exp = sub_exp ~ctx pvb_expr
     and lb_typ = pvb_constraint in
+    let pvb_modes =
+      if pvb_local then {txt= Mode "local"; loc= Location.none} :: pvb_modes
+      else pvb_modes
+    in
     let (lb_args, lb_typ, lb_modes, lb_exp), lb_modes_binding =
       if should_desugar_args lb_pat lb_typ then
         (split_fun_args cmts lb_pat lb_exp, pvb_modes)
@@ -372,7 +337,6 @@ module Let_binding = struct
     ; lb_exp
     ; lb_pun= pvb_is_pun
     ; lb_attrs= pvb_attributes
-    ; lb_local= pvb_local
     ; lb_is_poly= pvb_is_poly
     ; lb_modes_binding
     ; lb_loc= pvb_loc }
@@ -393,7 +357,6 @@ module Let_binding = struct
         ; lb_exp
         ; lb_pun= bo.pbop_is_pun
         ; lb_attrs= []
-        ; lb_local= false
         ; lb_is_poly= false
         ; lb_modes_binding= []
         ; lb_loc= bo.pbop_loc } )

@@ -243,7 +243,7 @@ let o =
 let f : type (a : immediate mod mode). a -> a = fun x -> x
 
 let f x =
-  let local_ g (type a : immediate mod mode) (x : a) = x in
+  let (g @ local) (type a : immediate mod mode) (x : a) = x in
   g x [@nontail]
 
 let f x y (type a : immediate mod mode) (z : a) = z
@@ -346,7 +346,7 @@ let f (type (a : immediate mod mode) (b : immediate mod mode)) x = x
 module type S = sig
   val init_with_immediates :
     ('a : immediate mod mode) ('b : immediate mod mode).
-    int -> f:local_ (int -> local_ 'a) -> local_ 'a t
+    int -> f:(int -> 'a @ local) @ local -> 'a t @ local
 end
 
 (**************************************)
