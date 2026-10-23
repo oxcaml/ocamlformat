@@ -1041,7 +1041,11 @@ let alert ?(def = none) ?(use = none) ~kind loc message =
 let deprecated ?def ?use loc message =
   alert ?def ?use ~kind:"deprecated" loc message
 
-module Style = Misc.Style
+module Style = struct
+  include Misc.Style
+
+  let inline_code = Format_doc.compat inline_code
+end
 
 let auto_include_alert lib =
   let message = Fmt.asprintf "\
