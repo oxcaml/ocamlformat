@@ -139,3 +139,7 @@ module F ((* 1 *) M (* 2 *) : (* 3 *) S (* 4 *) @ (* 5 *) m (* 6 *)) (* 7 *) : (
 module type FT = (* 1 *) functor (* 2 *) ( (* 3 *) M (* 4 *) : (* 5 *) S (* 6 *) @ (* 7 *) portable (* 8 *)) (* 9 *) -> (* 10 *) T (* 11 *) @ (* 12 *) portable (* 13 *)
 
 module type FT = S (* 1 *) @ (* 2 *) portable (* 3 *) -> (* 4 *) T (* 5 *) @ (* 6 *) portable (* 7 *)
+
+(* parens in rec *)
+
+module rec M : (S with type t = int) @ m = N

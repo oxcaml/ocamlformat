@@ -183,3 +183,7 @@ module type FT = (* 1 *)
 
 module type FT = functor (_ : S (* 1 *) @ (* 2 *) portable (* 3 *)) ->
   (* 4 *) T (* 5 *) @ (* 6 *) portable (* 7 *)
+
+(* parens in rec *)
+
+module rec M : ((S with type t = int)) @ m = N
