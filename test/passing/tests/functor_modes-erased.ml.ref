@@ -210,3 +210,17 @@ module type FT = functor
 (* parens in rec *)
 
 module rec M : (S with type t = int) = N
+
+(* attributes *)
+
+module F (M : S [@a]) = struct end
+
+module F (M : sig end [@a]) = struct end
+
+module F (M : sig end [@a]) = struct end
+
+module type T = functor (M : S) -> S [@a]
+
+module M : S [@a] = N
+
+module M : S [@a] = N

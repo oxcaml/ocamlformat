@@ -143,3 +143,12 @@ module type FT = S (* 1 *) @ (* 2 *) portable (* 3 *) -> (* 4 *) T (* 5 *) @ (* 
 (* parens in rec *)
 
 module rec M : (S with type t = int) @ m = N
+
+(* attributes *)
+
+module F (M : (S [@a]) @ m) = struct end
+module F (M : (sig end [@a]) @ m) = struct end
+module F (M : sig [@a] end @ m) = struct end
+module type T = functor (M : S) -> (S [@a]) @ m
+module M : (S [@a]) @ m = N
+module M = (N : (S [@a]) @ m)
