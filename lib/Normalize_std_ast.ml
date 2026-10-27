@@ -592,11 +592,20 @@ let make_mapper conf ~ignore_doc_comments ~erase_jane_syntax =
             }
           else ca.pca_type ) }
   in
+  let module_expr (m : Ast_mapper.mapper) me =
+    match me.pmod_desc with
+    | Pmod_constraint (me, None, _) when erase_jane_syntax ->
+        (* Same as the [Pexp_constraint] case above: a constraint that only
+           has modes is removed entirely. *)
+        m.module_expr m me
+    | _ -> Ast_mapper.default_mapper.module_expr m me
+  in
   { Ast_mapper.default_mapper with
     location
   ; attribute
   ; attributes
   ; structure
+  ; module_expr
   ; signature
   ; class_signature
   ; class_structure

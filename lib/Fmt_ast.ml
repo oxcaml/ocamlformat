@@ -4369,14 +4369,39 @@ and fmt_extension_constructor c ctx ec =
 and fmt_functor_param c ctx {loc; txt= arg} =
   match arg with
   | Unit -> Cmts.fmt c loc (wrap "(" ")" (Cmts.fmt_within c loc))
-  | Named (name, mt, _) ->
+  | Named (name, mt, mm) ->
       let xmt = sub_mty ~ctx mt in
       hvbox 0
         (Cmts.fmt c loc
            (wrap "(" ")"
               (hovbox 0
                  ( hovbox 0 (fmt_str_loc_opt c name $ fmt "@ : ")
-                 $ compose_module (fmt_module_type c xmt) ~f:Fn.id ) ) ) )
+                 $ compose_module
+                     (fmt_module_type_with_modes c xmt (Modes mm))
+                     ~f:Fn.id ) ) ) )
+
+(* Formats the module type [xmty] followed by the modes [modals], which the
+   parser only accepts after an atomic module type. *)
+and fmt_module_type_with_modes c ?rec_ xmty modals =
+  let blk = fmt_module_type c ?rec_ xmty in
+  let parens =
+    match xmty.ast.pmty_desc with
+    | Pmty_ident _ | Pmty_signature _ -> false
+    | _ -> true
+  in
+  match blk.pro with
+  | _ when is_empty_modals modals -> blk
+  | Some _ when not parens ->
+      (* [end @ m] always fits on a line. *)
+      { blk with
+        epi= Some (fmt_opt blk.epi $ fmt_modals ~pro:(str " ") c modals) }
+  | _ ->
+      (* Box the module type and its modes to break them as a unit. *)
+      { empty with
+        bdy=
+          hovbox 0
+            ( wrap_if parens "(" ")" (compose_module blk ~f:Fn.id)
+            $ fmt_modals c modals ) }
 
 and fmt_module_type c ?(rec_ = false) ({ast= mty; _} as xmty) =
   let ctx = Mty mty in
@@ -4417,16 +4442,18 @@ and fmt_module_type c ?(rec_ = false) ({ast= mty; _} as xmty) =
           Some
             ( str "end" $ after
             $ fmt_attributes_and_docstrings c pmty_attributes ) }
-  | Pmty_functor (args, mt, _mm) ->
-      let rec pull_args_from_ret args mt =
-        match (mt.pmty_desc, mt.pmty_attributes) with
-        | Pmty_functor (args', mt', _mm), [] ->
-            let args', mt' = pull_args_from_ret args' mt' in
-            (args @ args', mt')
-        | _ -> (args, mt)
+  | Pmty_functor (args, mt, mm) ->
+      (* Nested functor types are flattened, unless the return type has
+         modes: [functor (X : S) -> (functor (Y : T) -> U) @ m] is kept. *)
+      let rec pull_args_from_ret args mt mm =
+        match (mm, mt.pmty_desc, mt.pmty_attributes) with
+        | [], Pmty_functor (args', mt', mm'), [] ->
+            let args', mt', mm' = pull_args_from_ret args' mt' mm' in
+            (args @ args', mt', mm')
+        | _ -> (args, mt, mm)
       in
-      let args, mt = pull_args_from_ret args mt in
-      let blk = fmt_module_type c (sub_mty ~ctx mt) in
+      let args, mt, mm = pull_args_from_ret args mt mm in
+      let blk = fmt_module_type_with_modes c (sub_mty ~ctx mt) (Modes mm) in
       { blk with
         pro=
           Some
@@ -4715,7 +4742,7 @@ and fmt_module c ctx ?rec_ ?epi ?(can_sparse = false) keyword ?(eqty = "=")
   let ext = attrs.attrs_extension in
   let blk_t =
     Option.value_map xmty ~default:empty ~f:(fun xmty ->
-        let blk = fmt_module_type ?rec_ c xmty in
+        let blk = fmt_module_type_with_modes ?rec_ c xmty modals in
         { blk with
           pro=
             Some (str " " $ str eqty $ opt blk.pro (fun pro -> str " " $ pro))
@@ -4728,9 +4755,9 @@ and fmt_module c ctx ?rec_ ?epi ?(can_sparse = false) keyword ?(eqty = "=")
       (fmt_str_loc_opt c name $ fmt_modals c modals_id)
   in
   let blk_b = Option.value_map xbody ~default:empty ~f:(fmt_module_expr c) in
-  let fmt_name_and_mt ~pro ~loc name mt =
+  let fmt_name_and_mt ~pro ~loc name mt mm =
     let xmt = sub_mty ~ctx mt in
-    let blk = fmt_module_type c ?rec_ xmt in
+    let blk = fmt_module_type_with_modes c ?rec_ xmt (Modes mm) in
     let pro =
       pro $ Cmts.fmt_before c loc $ str "(" $ fmt_str_loc_opt c name
       $ str " : "
@@ -4744,13 +4771,13 @@ and fmt_module c ctx ?rec_ ?epi ?(can_sparse = false) keyword ?(eqty = "=")
     match txt with
     | Unit ->
         (pro $ Cmts.fmt c loc (wrap "(" ")" (Cmts.fmt_within c loc)), noop)
-    | Named (name, mt, _mm) ->
+    | Named (name, mt, mm) ->
         if args_p.dock then
           (* All signatures, put the [epi] into the box of the next arg and
              don't break. *)
-          fmt_name_and_mt ~pro ~loc name mt
+          fmt_name_and_mt ~pro ~loc name mt mm
         else
-          let bdy, epi = fmt_name_and_mt ~pro:noop ~loc name mt in
+          let bdy, epi = fmt_name_and_mt ~pro:noop ~loc name mt mm in
           let bdy_indent = if args_p.align then 1 else 0 in
           (pro $ hvbox bdy_indent bdy $ epi, noop)
   in
@@ -4783,13 +4810,14 @@ and fmt_module c ctx ?rec_ ?epi ?(can_sparse = false) keyword ?(eqty = "=")
     (if compact then 0 else 2)
     ( doc_before
     $ blk_box blk_b
-        ( (if Option.is_some blk_t.epi then hovbox else hvbox)
+        ( (if Option.is_some xmty then hovbox else hvbox)
             0
             ( blk_box blk_t
                 ( hvbox args_p.indent
                     (fmt_args ~pro:intro xargs $ fmt_opt blk_t.pro)
                 $ blk_t.psp $ blk_t.bdy )
-            $ blk_t.esp $ fmt_opt blk_t.epi $ fmt_modals c modals
+            $ blk_t.esp $ fmt_opt blk_t.epi
+            $ fmt_if_k (Option.is_none xmty) (fmt_modals c modals)
             $ fmt_if (Option.is_some xbody) " ="
             $ fmt_if_k compact fmt_pro )
         $ fmt_if_k (not compact) fmt_pro
@@ -4815,7 +4843,7 @@ and fmt_module_declaration c ~rec_flag ~first {ast= pmd; _} =
       ; pmd_modalities
       ; pmd_args
       ; pmd_type
-      ; pmd_mode= _
+      ; pmd_mode
       ; pmd_ext_attrs= attrs
       ; pmd_loc } =
     pmd
@@ -4830,8 +4858,8 @@ and fmt_module_declaration c ~rec_flag ~first {ast= pmd; _} =
   in
   Cmts.fmt c pmd_loc
     (fmt_module ~rec_:rec_flag c ctx keyword pmd_name
-       (Modalities pmd_modalities) pmd_args None ?eqty (Some xmty) No_modals
-       ~rec_flag:(rec_flag && first) ~attrs )
+       (Modalities pmd_modalities) pmd_args None ?eqty (Some xmty)
+       (Modes pmd_mode) ~rec_flag:(rec_flag && first) ~attrs )
 
 and fmt_module_substitution c ctx pms =
   let {pms_name; pms_manifest; pms_ext_attrs= attrs; pms_loc} = pms in
@@ -5050,9 +5078,10 @@ and fmt_module_expr ?(dock_struct = true) c ({ast= m; _} as xmod) =
               ; esp= noop
               ; epi= None } )
         | Some mt ->
-            let blk_t = fmt_module_type c (sub_mty ~ctx mt) in
-            ( fmt " :" $ Params.Mod.break_constraint c.conf ~rhs:mt
-            , {blk_t with bdy= blk_t.bdy $ fmt_modals c (Modes mm)} )
+            let blk_t =
+              fmt_module_type_with_modes c (sub_mty ~ctx mt) (Modes mm)
+            in
+            (fmt " :" $ Params.Mod.break_constraint c.conf ~rhs:mt, blk_t)
       in
       let has_epi =
         Cmts.has_after c.cmts pmod_loc || not (List.is_empty pmod_attributes)
