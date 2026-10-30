@@ -5115,6 +5115,24 @@
  (deps tests/.ocamlformat )
  (package ocamlformat)
  (action
+  (with-stdout-to global_modality_erased.ml.stdout
+   (with-stderr-to global_modality_erased.ml.stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --erase-jane-syntax %{dep:tests/global_modality_erased.ml}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/global_modality_erased.ml.ref global_modality_erased.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/global_modality_erased.ml.err global_modality_erased.ml.stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
   (with-stdout-to hash_bang.ml.stdout
    (with-stderr-to hash_bang.ml.stderr
      (setenv TERM dumb (run %{bin:ocamlformat} --margin-check %{dep:tests/hash_bang.ml}))))))
