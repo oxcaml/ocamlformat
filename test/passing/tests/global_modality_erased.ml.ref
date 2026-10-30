@@ -1,3 +1,3 @@
-type 'a r = {a: 'a; b: 'a}
+type 'a r = {a: 'a [@globalized]; b: 'a [@globalized]}
 
-type 'a r = Foo of 'a * 'a | Bar : 'a -> 'a r
+type 'a r = Foo of 'a * ('a[@globalized]) | Bar : ('a[@globalized]) -> 'a r
