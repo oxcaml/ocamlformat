@@ -304,15 +304,8 @@ let global_loc = mknoloc "extension.global"
 let global_attr =
   Attr.mk ~loc:Location.none (global_loc) (PStr [])
 
-let globalized_attr = Attr.mk ~loc:Location.none (mknoloc "globalized") (PStr [])
-
 let mkld_global ld =
-  let attr =
-    if Erase_jane_syntax.should_erase ()
-    then globalized_attr
-    else global_attr
-  in
-  { ld with pld_attributes = attr :: ld.pld_attributes }
+  { ld with pld_attributes = global_attr :: ld.pld_attributes }
 
 let mkld_global_maybe gbl ld =
   match gbl with
@@ -320,23 +313,12 @@ let mkld_global_maybe gbl ld =
   | Nothing -> ld
 
 let mkcty_global cty =
-  let attr =
-    if Erase_jane_syntax.should_erase ()
-    then globalized_attr
-    else global_attr
-  in
-  { cty with ptyp_attributes = attr :: cty.ptyp_attributes }
+  { cty with ptyp_attributes = global_attr :: cty.ptyp_attributes }
 
 let mkcty_global_maybe gbl cty =
   match gbl with
   | Global -> mkcty_global cty
   | Nothing -> cty
-
-(* [@@ global] on fields and constructor arguments is erased like [global_]. *)
-let erase_field_modalities gbl ms =
-  if not (Erase_jane_syntax.should_erase ()) then gbl, ms
-  else if List.exists (fun m -> m.txt = Modality "global") ms then Global, []
-  else gbl, []
 
 (* TODO define an abstraction boundary between locations-as-pairs
    and locations-as-Location.t; it should be clear when we move from
@@ -4227,8 +4209,7 @@ generalized_constructor_arguments:
 ;
 
 %inline constructor_argument:
-  gbl=global_flag cty=atomic_type m1=optional_atat_field_modalities_expr {
-    let gbl, m1 = erase_field_modalities gbl m1 in
+  gbl=global_flag cty=atomic_type m1=optional_atat_modalities_expr {
     let cty = mkcty_global_maybe gbl cty in
     Type.constructor_arg cty ~modalities:m1 ~loc:(make_loc $sloc)
   }
@@ -4246,15 +4227,14 @@ label_declarations:
   | label_declaration_semi label_declarations   { $1 :: $2 }
 ;
 label_declaration:
-    mutable_or_global_flag mkrhs(label) COLON poly_type_no_attr m1=optional_atat_field_modalities_expr attributes
+    mutable_or_global_flag mkrhs(label) COLON poly_type_no_attr m1=optional_atat_modalities_expr attributes
       { let info = symbol_info $endpos in
         let mut, gbl = $1 in
-        let gbl, m1 = erase_field_modalities gbl m1 in
         mkld_global_maybe gbl
           (Type.field $2 $4 ~mut ~modalities:m1 ~attrs:$6 ~loc:(make_loc $sloc) ~info) }
 ;
 label_declaration_semi:
-    mutable_or_global_flag mkrhs(label) COLON poly_type_no_attr m1=optional_atat_field_modalities_expr attributes
+    mutable_or_global_flag mkrhs(label) COLON poly_type_no_attr m1=optional_atat_modalities_expr attributes
       SEMI attributes
       { let info =
           match rhs_info $endpos($6) with
@@ -4262,7 +4242,6 @@ label_declaration_semi:
           | None -> symbol_info $endpos
        in
        let mut, gbl = $1 in
-       let gbl, m1 = erase_field_modalities gbl m1 in
        mkld_global_maybe gbl
          (Type.field $2 $4 ~mut ~modalities:m1 ~attrs:($6 @ $8) ~loc:(make_loc $sloc) ~info) }
 ;
@@ -4714,7 +4693,7 @@ at_mode_expr:
 %inline modality:
   | LIDENT { mkloc (Modality $1) (make_loc $sloc) }
 
-%inline sorted_modalities:
+%inline modalities:
   | modality+ {
       List.sort
         (fun
@@ -4723,32 +4702,16 @@ at_mode_expr:
         $1
     }
 
-%inline modalities:
-  | sorted_modalities {
-    if Erase_jane_syntax.should_erase ()
-    then []
-    else $1
-    }
-
 atat_modalities_expr:
   | ATAT modalities {$2}
   | ATAT error { expecting $loc($2) "modality expression" }
 ;
 
 optional_atat_modalities_expr:
-  | /* empty */
+  | %prec below_HASH
     { [] }
   | atat_modalities_expr
     { $1 }
-;
-
-/* Not erased: see [erase_field_modalities]. */
-optional_atat_field_modalities_expr:
-  | %prec below_HASH
-    { [] }
-  | ATAT sorted_modalities
-    { $2 }
-  | ATAT error { expecting $loc($2) "modality expression" }
 ;
 
 %inline stack(exp):
