@@ -1,0 +1,55 @@
+(* Code blocks in comments are formatted, and the formatter rewrites legacy [local_] and
+   [global_] syntax into modes and modalities. The comment check must treat the legacy and
+   modal forms as equal. *)
+
+(* Expressions:
+
+   {[
+     let () = f (x : @ local)
+
+     let () =
+       let (counter : int ref) = (ref 0 : @ local) in
+       let { a; b } = ({ a = 1; b = 2 } : @ local) in
+       if bar then (qux : @ local);
+       if baz then (qux : @ local)
+     ;;
+   ]} *)
+
+(* Let bindings:
+
+   {[
+     let () =
+       let x @ local = 1 in
+       let y : int @ local = 2 in
+       x + y
+     ;;
+   ]} *)
+
+(* Parameters:
+
+   {[
+     let f (x @ local) ~(y @ local) ?(z @ local = 1) (w : int @ local) = x
+   ]} *)
+
+(* Function bodies:
+
+   {[
+     let f x @ local = g x
+     let h x @ local = x
+   ]} *)
+
+(* Types:
+
+   {[
+     type t =
+       { a : int @@ global
+       ; b : int
+       }
+
+     type u = A of int @@ global * int
+     type v += B of int @@ global
+
+     module type S = sig
+       val f : int @ local -> int @ local
+     end
+   ]} *)

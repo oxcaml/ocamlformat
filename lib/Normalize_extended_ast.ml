@@ -118,6 +118,57 @@ let normalize_jane_street_local_annotations : attributes -> attributes =
 let sort_attributes : attributes -> attributes =
   List.sort ~compare:Poly.compare
 
+(* The formatter rewrites legacy [local_] and [global_] syntax into modes and
+   modalities, e.g. [local_ e] into [(e : @ local)] and [{global_ x : t}]
+   into [{x : t @@ global}]. The extended parser keeps the legacy forms
+   distinct, so we normalize them to the modal forms here. Otherwise code
+   blocks in comments, which are only compared using this normalization,
+   would be reported as changed. *)
+
+let local_mode = {Location.txt= Mode "local"; loc= Location.none}
+
+let global_modality = {Location.txt= Modality "global"; loc= Location.none}
+
+let split_global_attr attrs =
+  match
+    List.partition_tf attrs ~f:(fun attr ->
+        Conf.is_jane_street_local_annotation "global"
+          ~test:attr.attr_name.txt )
+  with
+  | [_], attrs -> (true, attrs)
+  | _ -> (false, attrs)
+
+let normalize_legacy_local_param (param : function_param) =
+  match param.pparam_desc with
+  | Pparam_val (true, lbl, default, pat) ->
+      let pat =
+        match pat.ppat_desc with
+        | Ppat_constraint (inner, typ, modes) ->
+            { pat with
+              ppat_desc= Ppat_constraint (inner, typ, modes @ [local_mode])
+            }
+        | _ ->
+            { pat with
+              ppat_desc= Ppat_constraint (pat, None, [local_mode])
+            ; ppat_attributes= [] }
+      in
+      {param with pparam_desc= Pparam_val (false, lbl, default, pat)}
+  | _ -> param
+
+let normalize_legacy_global_constructor_arguments = function
+  | Pcstr_tuple args ->
+      Pcstr_tuple
+        (List.map args ~f:(fun arg ->
+             let is_global, ptyp_attributes =
+               split_global_attr arg.pca_type.ptyp_attributes
+             in
+             if is_global then
+               { arg with
+                 pca_type= {arg.pca_type with ptyp_attributes}
+               ; pca_modalities= global_modality :: arg.pca_modalities }
+             else arg ) )
+  | Pcstr_record _ as args -> args
+
 let make_mapper ~ignore_doc_comments ~normalize_doc =
   let open Ast_helper in
   (* remove locations *)
@@ -173,6 +224,17 @@ let make_mapper ~ignore_doc_comments ~normalize_doc =
     let exp = {exp with pexp_loc_stack= []} in
     let {pexp_desc; pexp_loc= loc1; pexp_attributes= attrs1; _} = exp in
     match pexp_desc with
+    | Pexp_apply
+        ( { pexp_desc= Pexp_extension ({txt; _}, PStr [])
+          ; pexp_attributes= []
+          ; _ }
+        , [(Nolabel, e)] )
+      when Conf.is_jane_street_local_annotation "local" ~test:txt ->
+        m.expr m {exp with pexp_desc= Pexp_constraint (e, None, [local_mode])}
+    | Pexp_fun (param, body) ->
+        Ast_mapper.default_mapper.expr m
+          { exp with
+            pexp_desc= Pexp_fun (normalize_legacy_local_param param, body) }
     | Pexp_poly ({pexp_desc= Pexp_constraint (e, Some t, []); _}, None) ->
         m.expr m {exp with pexp_desc= Pexp_poly (e, Some t)}
     | Pexp_constraint (e, Some {ptyp_desc= Ptyp_poly ([], _t); _}, []) ->
@@ -226,12 +288,48 @@ let make_mapper ~ignore_doc_comments ~normalize_doc =
     Ast_mapper.default_mapper.pat m pat
   in
   let label_declaration (m : Ast_mapper.mapper) ld =
+    let is_global, pld_attributes = split_global_attr ld.pld_attributes in
+    let pld_modalities =
+      if is_global then global_modality :: ld.pld_modalities
+      else ld.pld_modalities
+    in
     let ld =
       { ld with
         pld_attributes=
-          normalize_jane_street_local_annotations ld.pld_attributes }
+          normalize_jane_street_local_annotations pld_attributes
+      ; pld_modalities }
     in
     Ast_mapper.default_mapper.label_declaration m ld
+  in
+  let value_binding (m : Ast_mapper.mapper) vb =
+    let vb =
+      if vb.pvb_local then
+        {vb with pvb_local= false; pvb_modes= local_mode :: vb.pvb_modes}
+      else vb
+    in
+    Ast_mapper.default_mapper.value_binding m vb
+  in
+  let constructor_declaration (m : Ast_mapper.mapper) cd =
+    let cd =
+      { cd with
+        pcd_args= normalize_legacy_global_constructor_arguments cd.pcd_args
+      }
+    in
+    Ast_mapper.default_mapper.constructor_declaration m cd
+  in
+  let extension_constructor (m : Ast_mapper.mapper) ec =
+    let ec =
+      match ec.pext_kind with
+      | Pext_decl (vars, args, res) ->
+          { ec with
+            pext_kind=
+              Pext_decl
+                ( vars
+                , normalize_legacy_global_constructor_arguments args
+                , res ) }
+      | Pext_rebind _ -> ec
+    in
+    Ast_mapper.default_mapper.extension_constructor m ec
   in
   let type_declaration (m : Ast_mapper.mapper) td =
     let _, td = rewrite_type_declaration_imm_attr_to_jkind_annot td in
@@ -246,6 +344,9 @@ let make_mapper ~ignore_doc_comments ~normalize_doc =
   ; pat
   ; typ
   ; label_declaration
+  ; value_binding
+  ; constructor_declaration
+  ; extension_constructor
   ; type_declaration }
 
 let normalize_cmt (conf : Conf.t) =

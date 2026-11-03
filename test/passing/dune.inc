@@ -8711,6 +8711,24 @@
  (deps tests/.ocamlformat )
  (package ocamlformat)
  (action
+  (with-stdout-to local_in_comment_code.ml.stdout
+   (with-stderr-to local_in_comment_code.ml.stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --profile=janestreet --max-iters=3 %{dep:tests/local_in_comment_code.ml}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/local_in_comment_code.ml.ref local_in_comment_code.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/local_in_comment_code.ml.err local_in_comment_code.ml.stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
   (with-stdout-to local_to_at_local.ml.stdout
    (with-stderr-to local_to_at_local.ml.stderr
      (setenv TERM dumb (run %{bin:ocamlformat} --margin-check %{dep:tests/local_to_at_local.ml}))))))
