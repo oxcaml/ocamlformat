@@ -16,7 +16,7 @@ let rec poly_ f x = g x
 and poly_ g x = f x
 
 (* Mixed with modes *)
-let poly_ local_ f x = x
+let poly_ (f @ local) x = x
 let poly_ f (x @ local) = x
 let poly_ f : ('a -> 'a) @ portable = fun x -> x
 let poly_ (f @ portable) x = x

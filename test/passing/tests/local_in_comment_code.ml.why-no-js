@@ -1,0 +1,2 @@
+this test runs only in the "janestreet" profile (as configured via opts),
+because code blocks in plain comments are only formatted in that profile
