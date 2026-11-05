@@ -394,13 +394,13 @@ end
 module Global_modality_on_record_fields = struct
   type t =
     { x: t @@ global
-    ; global_ x: t @@ global
+    ; x: t @@ global global
     ; mutable x: t @@ global
     ; x: t @@ global portable
     ; x: t @@ global portable
     ; x: t @@ portable
     ; x: t @@ global [@attr]
-    ; global_ x: t }
+    ; x: t @@ global }
 
   type t = A of {x: t @@ global}
 end
@@ -408,13 +408,13 @@ end
 module Global_modality_on_constructor_arguments = struct
   type t =
     | A of typ @@ global
-    | B of global_ typ @@ global
+    | B of typ @@ global global
     | C of typ1 @@ global portable * typ2 @@ global portable
     | D of typ @@ portable
 
   type t =
     | A : typ @@ global -> t
-    | B : global_ typ @@ global -> t
+    | B : typ @@ global global -> t
     | C : typ1 @@ global portable * typ2 @@ global portable -> t
     | D : typ @@ portable -> t
 end
