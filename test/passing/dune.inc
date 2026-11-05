@@ -5007,6 +5007,96 @@
  (deps tests/.ocamlformat )
  (package ocamlformat)
  (action
+  (with-stdout-to functor_modes-erased.ml.stdout
+   (with-stderr-to functor_modes-erased.ml.stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --erase-jane-syntax --max-iters=5 %{dep:tests/functor_modes.ml}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/functor_modes-erased.ml.ref functor_modes-erased.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/functor_modes-erased.ml.err functor_modes-erased.ml.stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
+  (with-stdout-to functor_modes.ml.stdout
+   (with-stderr-to functor_modes.ml.stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --max-iters=5 %{dep:tests/functor_modes.ml}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/functor_modes.ml.ref functor_modes.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/functor_modes.ml.err functor_modes.ml.stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
+  (with-stdout-to functor_modes.ml.js-stdout
+   (with-stderr-to functor_modes.ml.js-stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --profile=janestreet --enable-outside-detected-project --disable-conf-files %{dep:tests/functor_modes.ml}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/functor_modes.ml.js-ref functor_modes.ml.js-stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/functor_modes.ml.js-err functor_modes.ml.js-stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
+  (with-stdout-to functor_modes.mli.stdout
+   (with-stderr-to functor_modes.mli.stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check %{dep:tests/functor_modes.mli}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/functor_modes.mli.ref functor_modes.mli.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/functor_modes.mli.err functor_modes.mli.stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
+  (with-stdout-to functor_modes.mli.js-stdout
+   (with-stderr-to functor_modes.mli.js-stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --profile=janestreet --enable-outside-detected-project --disable-conf-files %{dep:tests/functor_modes.mli}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/functor_modes.mli.js-ref functor_modes.mli.js-stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/functor_modes.mli.js-err functor_modes.mli.js-stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
   (with-stdout-to funsig.ml.stdout
    (with-stderr-to funsig.ml.stderr
      (setenv TERM dumb (run %{bin:ocamlformat} --margin-check %{dep:tests/funsig.ml}))))))
