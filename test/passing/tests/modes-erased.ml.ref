@@ -375,7 +375,8 @@ module Global_modality_on_record_fields = struct
     ; x: t [@globalized]
     ; x: t [@globalized]
     ; x: t
-    ; x: t [@globalized] [@attr] }
+    ; x: t [@globalized] [@attr]
+    ; x: t [@globalized] }
 
   type t = A of {x: t [@globalized]}
 end

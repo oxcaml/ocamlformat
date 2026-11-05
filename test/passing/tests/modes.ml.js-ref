@@ -450,6 +450,7 @@ module Global_modality_on_record_fields = struct
     ; x : t @@ global portable
     ; x : t @@ portable
     ; x : t @@ global [@attr]
+    ; global_ x : t
     }
 
   type t = A of { x : t @@ global }
