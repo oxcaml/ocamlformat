@@ -258,9 +258,54 @@ module Parse = struct
     in
     Ast_mapper.{default_mapper with expr; pat; binding_op}
 
+  (* With --erase-jane-syntax, drop all modalities. On fields and constructor
+     arguments, [global_] and [@@ global] become a single [@globalized]. *)
+  let erase_modalities (mapper : Ast_mapper.mapper) =
+    let open Ast_mapper in
+    let globalized =
+      Ast_helper.Attr.mk ~loc:Location.none
+        (Location.mknoloc "globalized")
+        (PStr [])
+    in
+    let is_global_ a =
+      Conf.is_jane_street_local_annotation "global" ~test:a.attr_name.txt
+    in
+    let erase_global_to_globalized modalities attrs =
+      if
+        List.exists attrs ~f:is_global_
+        || List.exists modalities ~f:(function
+             | {Location.txt= Modality "global"; _} -> true
+             | _ -> false )
+      then globalized :: List.filter attrs ~f:(Fn.non is_global_)
+      else attrs
+    in
+    let label_declaration m ld =
+      mapper.label_declaration m
+        { ld with
+          pld_attributes=
+            erase_global_to_globalized ld.pld_modalities ld.pld_attributes }
+    in
+    let constructor_argument m ca =
+      let ty = ca.pca_type in
+      mapper.constructor_argument m
+        { ca with
+          pca_type=
+            { ty with
+              ptyp_attributes=
+                erase_global_to_globalized ca.pca_modalities
+                  ty.ptyp_attributes } }
+    in
+    { mapper with
+      modalities= (fun _ _ -> [])
+    ; label_declaration
+    ; constructor_argument }
+
   let ast (type a) (fg : a t) ~ocaml_version ~preserve_beginend ~input_name
       str : a =
-    map fg (normalize_mapper ~ocaml_version ~preserve_beginend)
+    let mapper = normalize_mapper ~ocaml_version ~preserve_beginend in
+    map fg
+      ( if Erase_jane_syntax.should_erase () then erase_modalities mapper
+        else mapper )
     @@
     let lexbuf = Lexing.from_string str in
     Location.init lexbuf input_name ;

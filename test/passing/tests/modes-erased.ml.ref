@@ -367,6 +367,34 @@ module Modalities_on_construct_arguments = struct
   type t = A : typ -> t | B : typ1 * typ2 -> t
 end
 
+module Global_modality_on_record_fields = struct
+  type t =
+    { x: t [@globalized]
+    ; x: t [@globalized]
+    ; mutable x: t [@globalized]
+    ; x: t [@globalized]
+    ; x: t [@globalized]
+    ; x: t
+    ; x: t [@globalized] [@attr]
+    ; x: t [@globalized] }
+
+  type t = A of {x: t [@globalized]}
+end
+
+module Global_modality_on_constructor_arguments = struct
+  type t =
+    | A of (typ[@globalized])
+    | B of (typ[@globalized])
+    | C of (typ1[@globalized]) * (typ2[@globalized])
+    | D of typ
+
+  type t =
+    | A : (typ[@globalized]) -> t
+    | B : (typ[@globalized]) -> t
+    | C : (typ1[@globalized]) * (typ2[@globalized]) -> t
+    | D : typ -> t
+end
+
 module type Value_descriptions = sig
   val x : typ
 

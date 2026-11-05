@@ -304,15 +304,8 @@ let global_loc = mknoloc "extension.global"
 let global_attr =
   Attr.mk ~loc:Location.none (global_loc) (PStr [])
 
-let globalized_attr = Attr.mk ~loc:Location.none (mknoloc "globalized") (PStr [])
-
 let mkld_global ld =
-  let attr =
-    if Erase_jane_syntax.should_erase ()
-    then globalized_attr
-    else global_attr
-  in
-  { ld with pld_attributes = attr :: ld.pld_attributes }
+  { ld with pld_attributes = global_attr :: ld.pld_attributes }
 
 let mkld_global_maybe gbl ld =
   match gbl with
@@ -320,12 +313,7 @@ let mkld_global_maybe gbl ld =
   | Nothing -> ld
 
 let mkcty_global cty =
-  let attr =
-    if Erase_jane_syntax.should_erase ()
-    then globalized_attr
-    else global_attr
-  in
-  { cty with ptyp_attributes = attr :: cty.ptyp_attributes }
+  { cty with ptyp_attributes = global_attr :: cty.ptyp_attributes }
 
 let mkcty_global_maybe gbl cty =
   match gbl with
@@ -4707,9 +4695,6 @@ at_mode_expr:
 
 %inline modalities:
   | modality+ {
-    if Erase_jane_syntax.should_erase ()
-    then []
-    else
       List.sort
         (fun
           { Location.txt = Modality m1; _ } { Location.txt = Modality m2; _ } ->

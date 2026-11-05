@@ -45,6 +45,7 @@ type mapper = {
                           -> class_type_declaration;
   class_type_field: mapper -> class_type_field -> class_type_field;
   constant: mapper -> constant -> constant;
+  constructor_argument: mapper -> constructor_argument -> constructor_argument;
   constructor_declaration: mapper -> constructor_declaration
                            -> constructor_declaration;
   expr: mapper -> expression -> expression;
@@ -295,7 +296,7 @@ module T = struct
     { pca_type; pca_loc; pca_modalities }
 
   let map_constructor_arguments sub = function
-    | Pcstr_tuple l -> Pcstr_tuple (List.map (map_constructor_argument sub) l)
+    | Pcstr_tuple l -> Pcstr_tuple (List.map (sub.constructor_argument sub) l)
     | Pcstr_record (loc, l) ->
         let loc = sub.location sub loc in
         let l = List.map (sub.label_declaration sub) l in
@@ -1048,6 +1049,8 @@ let default_mapper =
            ~local:pvb_local
       );
     value_bindings = PVB.map_value_bindings;
+
+    constructor_argument = T.map_constructor_argument;
 
     constructor_declaration =
       (fun this {pcd_name; pcd_vars; pcd_args;
