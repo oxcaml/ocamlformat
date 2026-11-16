@@ -505,15 +505,42 @@ let make_mapper conf ~ignore_doc_comments ~erase_jane_syntax =
         {jkind with pjka_desc= Pjk_operator (inner, ops1 @ ops2)}
     | _ -> jkind
   in
+  let sort_mode_consts consts =
+    List.sort consts ~compare:(fun c1 c2 ->
+        String.compare c1.Location.txt c2.Location.txt )
+  in
+  let mode_const_name {Location.txt; _} =
+    match txt with
+    | Pmode c -> Some c
+    | Pmode_var _ | Pmode_bounded _ -> None
+  in
   let modes (m : Ast_mapper.mapper) ms =
     Ast_mapper.default_mapper.modes m
       ( if erase_jane_syntax then []
         else
-          List.sort
-            ~compare:(fun
-                {Location.txt= Mode m1; _} {Location.txt= Mode m2; _} ->
-              String.compare m1 m2 )
-            ms )
+          List.stable_sort ms ~compare:(fun m1 m2 ->
+              Option.compare String.compare (mode_const_name m1)
+                (mode_const_name m2) ) )
+  in
+  let mode_bound (m : Ast_mapper.mapper) bound =
+    let vars =
+      List.filter_map bound ~f:(function
+        | Pbound_var v -> Some v
+        | Pbound_const _ -> None )
+      |> List.stable_sort ~compare:(fun v1 v2 ->
+             String.compare v1.pbound_var.txt v2.pbound_var.txt )
+      |> List.map ~f:(fun v ->
+             Pbound_var {v with pbound_mod= sort_mode_consts v.pbound_mod} )
+    in
+    let consts =
+      List.concat_map bound ~f:(function
+        | Pbound_const cs -> cs
+        | Pbound_var _ -> [] )
+    in
+    Ast_mapper.default_mapper.mode_bound m
+      ( match consts with
+      | [] -> vars
+      | _ :: _ -> vars @ [Pbound_const (sort_mode_consts consts)] )
   in
   let modalities (m : Ast_mapper.mapper) ms =
     Ast_mapper.default_mapper.modalities m
@@ -623,6 +650,7 @@ let make_mapper conf ~ignore_doc_comments ~erase_jane_syntax =
   ; label_declaration
   ; jkind_annotation
   ; modes
+  ; mode_bound
   ; modalities
   ; value_binding
   ; value_description

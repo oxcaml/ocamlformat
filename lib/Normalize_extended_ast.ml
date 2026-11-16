@@ -125,7 +125,7 @@ let sort_attributes : attributes -> attributes =
    blocks in comments, which are only compared using this normalization,
    would be reported as changed. *)
 
-let local_mode = {Location.txt= Mode "local"; loc= Location.none}
+let local_mode = {Location.txt= Pmode "local"; loc= Location.none}
 
 let global_modality = {Location.txt= Modality "global"; loc= Location.none}
 
