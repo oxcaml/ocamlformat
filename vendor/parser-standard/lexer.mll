@@ -59,12 +59,14 @@ let keyword_table =
     "functor", FUNCTOR;
     "global_", GLOBAL;
     "if", IF;
+    "implies_", IMPLIES;
     "in", IN;
     "include", INCLUDE;
     "inherit", INHERIT;
     "initializer", INITIALIZER;
     "kind_", KIND;
     "kind_of_", KIND_OF;
+    "law_", LAW;
     "layout_", LAYOUT;
     "lazy", LAZY;
     "let", LET;

@@ -1,0 +1,18 @@
+val length : 'a list -> int
+
+law_? length_nonneg (xs : 'a list) : length xs >= 0
+
+(** Documented. *)
+law_? sqrt_nonneg (x : float) : Float.(x >= 0.) implies_ Float.(sqrt x >= 0.)
+[@@attr]
+
+module type S = sig
+  val f : int -> int
+
+  law_? f_id x : x >= 0 implies_ f x = x
+end
+
+law_? a_very_long_law_name_to_force_breaking (first_argument : int list)
+    (second_argument : (int, string) Hashtbl.t) :
+  List.length first_argument > 0 implies_
+  some_function first_argument second_argument = expected_result

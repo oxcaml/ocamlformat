@@ -419,7 +419,8 @@ let make_mapper conf ~ignore_doc_comments ~erase_jane_syntax =
   in
   let structure m str =
     List.filter str ~f:(function
-      | {pstr_desc= Pstr_jkind _; _} when erase_jane_syntax -> false
+      | {pstr_desc= Pstr_jkind _ | Pstr_law _; _} when erase_jane_syntax ->
+          false
       | {pstr_desc= Pstr_attribute a; _} when ignore_doc_comments && is_doc a
         ->
           false
@@ -430,7 +431,8 @@ let make_mapper conf ~ignore_doc_comments ~erase_jane_syntax =
     let psg_modalities = if erase_jane_syntax then [] else psg_modalities in
     let psg_items =
       List.filter psg_items ~f:(function
-        | {psig_desc= Psig_jkind _; _} when erase_jane_syntax -> false
+        | {psig_desc= Psig_jkind _ | Psig_law _; _} when erase_jane_syntax ->
+            false
         | _ -> true )
       |> List.filter ~f:(function
            | {psig_desc= Psig_attribute a; _}
