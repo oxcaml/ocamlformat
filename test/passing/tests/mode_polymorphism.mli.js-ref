@@ -1,0 +1,20 @@
+val var : 'a @ 'm -> 'a @ 'm
+val bounds : 'a @ [< 'm] -> 'b @ [> 'n] -> 'a @ [< 'm & portable > 'm | 'n]
+val canonical : 'a @ [< 'm & past('n) mod contended portable & 'o & many portable] -> unit
+val mixed : 'a @ 'm [< 'n] portable -> unit
+
+val long
+  :  'a
+     @ [< 'mmmmmmmmmmmmmmmm mod
+            contended global immutable many portable stateless uncontended unique
+        & past('nnnnnnnnnnnnnnnnnnnn)
+        > 'oooooooooooooooo
+        | dynamic]
+  -> 'a
+
+val cmts
+  :  'a
+     @ (* 1 *)
+       [< (* 2 *) close('m (* 3 *)) mod (* 4 *) portable & (* 5 *) many (* 6 *)]
+       (* 7 *)
+  -> unit

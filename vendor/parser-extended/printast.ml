@@ -229,11 +229,34 @@ let modalities i ppf modalities =
     List.map (Location.map (fun (Modality x) -> x)) modalities
   )
 
+let mode_bound_var i ppf { pbound_morph; pbound_var; pbound_mod } =
+  line i ppf "mode_bound_var\n";
+  option (i+1) string_loc ppf pbound_morph;
+  string_loc (i+1) ppf pbound_var;
+  list (i+1) string_loc ppf pbound_mod
+
+let mode_bound_elem i ppf = function
+  | Pbound_var v -> mode_bound_var i ppf v
+  | Pbound_const cs -> list i string_loc ppf cs
+
+let mode_bound i ppf elems =
+  list i mode_bound_elem ppf elems
+
+let mode i ppf (mode : mode loc) =
+  match mode.txt with
+  | Pmode x -> string_loc i ppf { mode with txt = x }
+  | Pmode_var v ->
+    line i ppf "Pmode_var \"%s\" %a\n" v fmt_location mode.loc
+  | Pmode_bounded { pmode_upper; pmode_lower } ->
+    line i ppf "Pmode_bounded %a\n" fmt_location mode.loc;
+    line (i+1) ppf "pmode_upper\n";
+    mode_bound (i+2) ppf pmode_upper;
+    line (i+1) ppf "pmode_lower\n";
+    mode_bound (i+2) ppf pmode_lower
+
 let modes i ppf modes =
   line i ppf "modes\n";
-  list i string_loc ppf (
-    List.map (Location.map (fun (Mode x) -> x)) modes
-  )
+  list i mode ppf modes
 
 let include_kind i ppf = function
   | Structure -> line i ppf "Structure\n"

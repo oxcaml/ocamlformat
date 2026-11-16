@@ -58,6 +58,43 @@ let pv_of_priv = function
   | Private priv -> mk_pv ~priv ()
 
 let mkvarinj s l = mkloc s (make_loc l)
+
+let sort_mode_consts consts =
+  List.sort
+    (fun c1 c2 -> String.compare c1.Location.txt c2.Location.txt)
+    consts
+
+let mode_const_name { Location.txt; _ } =
+  match txt with
+  | Pmode c -> Some c
+  | Pmode_var _ | Pmode_bounded _ -> None
+
+let sort_modes modes =
+  List.stable_sort
+    (fun m1 m2 ->
+      Option.compare String.compare (mode_const_name m1) (mode_const_name m2))
+    modes
+
+let sort_mode_bound elems =
+  let vars =
+    elems
+    |> List.filter_map (function
+         | Pbound_var v -> Some v
+         | Pbound_const _ -> None)
+    |> List.stable_sort (fun v1 v2 ->
+         String.compare v1.pbound_var.txt v2.pbound_var.txt)
+    |> List.map (fun v ->
+         Pbound_var { v with pbound_mod = sort_mode_consts v.pbound_mod })
+  in
+  let consts =
+    List.concat_map
+      (function Pbound_const cs -> cs | Pbound_var _ -> [])
+      elems
+  in
+  match consts with
+  | [] -> vars
+  | _ :: _ -> vars @ [Pbound_const (sort_mode_consts consts)]
+
 let mktyp ~loc ?attrs d = Typ.mk ~loc:(make_loc loc) ?attrs d
 let mkpat ~loc d = Pat.mk ~loc:(make_loc loc) d
 let mkexp ~loc ?attrs d = Exp.mk ~loc:(make_loc loc) ?attrs d
@@ -4645,20 +4682,67 @@ strict_function_or_labeled_tuple_type:
 ;
 
 /* New mode annotation, introduced by AT or ATAT */
+%inline mode_const:
+  | LIDENT { mkloc $1 (make_loc $sloc) }
+;
+
+%inline mode_consts:
+  | mode_const+ { $1 }
+;
+
+%inline mode_morph:
+  | LIDENT { mkloc $1 (make_loc $sloc) }
+;
+
+%inline mode_var:
+  | QUOTE ident { mkloc $2 (make_loc $sloc) }
+;
+
+mode_bound_var:
+  | pbound_var = mode_var
+    pbound_mod = iloption(preceded(MOD, mode_consts))
+      { { pbound_morph = None; pbound_var; pbound_mod } }
+  | pbound_morph = mode_morph LPAREN pbound_var = mode_var RPAREN
+    pbound_mod = iloption(preceded(MOD, mode_consts))
+      { { pbound_morph = Some pbound_morph; pbound_var; pbound_mod } }
+;
+
+mode_bound_elem:
+  | v = mode_bound_var
+      { Pbound_var v }
+  | consts = mode_consts
+      { Pbound_const consts }
+;
+
+mode_bound(SEP):
+  | elems = separated_nonempty_list(SEP, mode_bound_elem)
+      { sort_mode_bound elems }
+;
+
+mode_bounded:
+  | LBRACKETLESS pmode_upper = mode_bound(AMPERSAND) RBRACKET
+      { { pmode_upper; pmode_lower = [] } }
+  | LBRACKETLESS pmode_upper = mode_bound(AMPERSAND) GREATER
+    pmode_lower = mode_bound(BAR) RBRACKET
+      { { pmode_upper; pmode_lower } }
+  | LBRACKETGREATER pmode_lower = mode_bound(BAR) RBRACKET
+      { { pmode_upper = []; pmode_lower } }
+  | LBRACKETGREATER pmode_lower = mode_bound(BAR) LESS
+    pmode_upper = mode_bound(AMPERSAND) RBRACKET
+      { { pmode_upper; pmode_lower } }
+;
+
 %inline mode:
-  | LIDENT { mkloc (Mode $1) (make_loc $sloc) }
+  | LIDENT { mkloc (Pmode $1) (make_loc $sloc) }
+  | v = mode_var { mkloc (Pmode_var v.txt) v.loc }
+  | b = mode_bounded { mkloc (Pmode_bounded b) (make_loc $sloc) }
 ;
 
 %inline mode_expr:
   | mode+ {
     if Erase_jane_syntax.should_erase ()
     then []
-    else
-      List.sort
-        (fun
-          { Location.txt = Mode m1; _ } { Location.txt = Mode m2; _ } ->
-        String.compare m1 m2)
-        $1
+    else sort_modes $1
     }
 ;
 
@@ -4677,13 +4761,9 @@ at_mode_expr:
     let m =
       if m0 && not (Erase_jane_syntax.should_erase ()) then
         let local_mode =
-          mkloc (Mode "local") (make_loc ($startpos(m0), $endpos(m0)))
+          mkloc (Pmode "local") (make_loc ($startpos(m0), $endpos(m0)))
         in
-        List.sort
-          (fun
-            { Location.txt = Mode m1; _ } { Location.txt = Mode m2; _ } ->
-          String.compare m1 m2)
-          (local_mode :: m1)
+        sort_modes (local_mode :: m1)
       else m1
     in
     (ty, $loc(ty)), m

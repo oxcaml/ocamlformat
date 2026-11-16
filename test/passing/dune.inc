@@ -9109,6 +9109,42 @@
  (deps tests/.ocamlformat )
  (package ocamlformat)
  (action
+  (with-stdout-to mode_polymorphism.mli.stdout
+   (with-stderr-to mode_polymorphism.mli.stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --margin-check %{dep:tests/mode_polymorphism.mli}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/mode_polymorphism.mli.ref mode_polymorphism.mli.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/mode_polymorphism.mli.err mode_polymorphism.mli.stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
+  (with-stdout-to mode_polymorphism.mli.js-stdout
+   (with-stderr-to mode_polymorphism.mli.js-stderr
+     (setenv TERM dumb (run %{bin:ocamlformat} --profile=janestreet --enable-outside-detected-project --disable-conf-files %{dep:tests/mode_polymorphism.mli}))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/mode_polymorphism.mli.js-ref mode_polymorphism.mli.js-stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/mode_polymorphism.mli.js-err mode_polymorphism.mli.js-stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
   (with-stdout-to modes-erased.ml.stdout
    (with-stderr-to modes-erased.ml.stderr
      (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --erase-jane-syntax --max-iters=3 %{dep:tests/modes.ml}))))))

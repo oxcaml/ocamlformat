@@ -853,7 +853,41 @@ and type_constr_and_body c xbody =
 
 and fmt_modals ?(pro = fmt "@ ") c modals =
   let fmt_modal {txt; loc} = Cmts.fmt c loc (str txt) ~eol:(fmt "@ ") in
-  let fmt_mode {txt= Mode mode; loc} = fmt_modal {txt= mode; loc} in
+  let fmt_mode_bound_var {pbound_morph; pbound_var; pbound_mod} =
+    let var = fmt_modal {pbound_var with txt= "'" ^ pbound_var.txt} in
+    let head =
+      match pbound_morph with
+      | None -> var
+      | Some morph -> fmt_modal morph $ str "(" $ var $ str ")"
+    in
+    hovbox 2
+      ( head
+      $ fmt_if_k
+          (not (List.is_empty pbound_mod))
+          (fmt "@ mod@ " $ hvbox 0 (list pbound_mod "@ " fmt_modal)) )
+  in
+  let fmt_mode_bound_elem = function
+    | Pbound_var var -> fmt_mode_bound_var var
+    | Pbound_const consts -> hvbox 0 (list consts "@ " fmt_modal)
+  in
+  let fmt_mode_bound sep bound = list bound sep fmt_mode_bound_elem in
+  let fmt_mode {txt; loc} =
+    match txt with
+    | Pmode mode -> fmt_modal {txt= mode; loc}
+    | Pmode_var var -> fmt_modal {txt= "'" ^ var; loc}
+    | Pmode_bounded {pmode_upper; pmode_lower} ->
+        let has_upper = not (List.is_empty pmode_upper) in
+        let has_lower = not (List.is_empty pmode_lower) in
+        Cmts.fmt c loc
+          (hvbox 1
+             ( str "["
+             $ fmt_if_k has_upper
+                 (str "< " $ fmt_mode_bound "@ & " pmode_upper)
+             $ fmt_if_k has_lower
+                 ( fmt_if has_upper "@ " $ str "> "
+                 $ fmt_mode_bound "@ | " pmode_lower )
+             $ str "]" ) )
+  in
   let fmt_modality {txt= Modality modality; loc} =
     fmt_modal {txt= modality; loc}
   in
@@ -1640,7 +1674,7 @@ and fmt_fun_args c args =
      keep the simpler prefix-style code path which emits [(pat @ local)] and
      doesn't disturb comment placement. *)
   let merge_islocal_into_existing_modes pat =
-    let local_mode = {Location.txt= Mode "local"; loc= Location.none} in
+    let local_mode = {Location.txt= Pmode "local"; loc= Location.none} in
     match pat.ppat_desc with
     | Ppat_constraint (inner, typ, modes) ->
         Some
@@ -2483,7 +2517,7 @@ and fmt_expression c ?(box = true) ?(pro = noop) ?eol ?parens
       , [(Nolabel, sbody)] )
     when Conf.is_jane_street_local_annotation "local" ~test:extension_local
     ->
-      let modes = [{txt= Mode "local"; loc= ext_loc}] in
+      let modes = [{txt= Pmode "local"; loc= ext_loc}] in
       pro
       $ hvbox
           (Params.Indent.exp_constraint c.conf)
