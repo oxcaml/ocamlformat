@@ -1,0 +1,78 @@
+(* Laws in structures, with and without parameters and assumptions. *)
+
+let length = List.length
+
+law_? length_nonneg (xs : 'a list) : length xs >= 0
+
+law_? untyped x y : x = y
+
+law_? no_params : true
+
+law_? unzip_zip (xs : int list) (ys : int list) :
+  length xs = length ys implies_
+  let xs', ys' = List.split (List.combine xs ys) in
+  xs' = xs && ys' = ys
+
+law_? sqrt_nonneg (x : float) : Float.(x >= 0.) implies_ Float.(sqrt x >= 0.)
+
+module M = struct
+  law_? trivial : true
+end
+
+(* Precedence: [implies_] binds less tightly than anything, so none of these
+   clauses need parentheses to parse. The formatter adds them to assumptions
+   whose right end is open, but not to conclusions. *)
+
+law_? infix (a : bool) (b : bool) : a && b implies_ a || b
+
+law_? if_ (a : bool) (b : bool) : (if a then b) implies_ b
+
+law_? if_else (a : bool) (b : bool) :
+  (if a then b else a) implies_ if a then b else a
+
+law_? fun_ (a : bool) : (fun b -> b) implies_ a
+
+law_? match_ (a : bool) :
+  (match a with true -> a | false -> true) implies_
+  match a with true -> a | false -> true
+
+(* Sequences must be parenthesized in both positions; the parser rejects them
+   otherwise (see test/cli/laws_seq.t). *)
+
+law_? seq (a : bool) :
+  (print_endline "x" ; a) implies_ (print_endline "y" ; a)
+
+(* Unnecessary parentheses are removed. *)
+
+law_? redundant_parens (a : bool) : a implies_ f a
+
+(* Attributes and docstrings *)
+
+law_? clause_attrs : a [@attr_a] implies_ b [@attr_b]
+
+law_? item_attrs (x : int) : x = x [@@attr]
+
+law_? pre_attr : true [@@pre]
+
+(** Documented. *)
+law_? documented : true
+
+[@@@floating]
+
+(* Breaking *)
+
+law_? a_very_long_law_name_to_force_breaking (first_argument : int list)
+    (second_argument : (int, string) Hashtbl.t) (third : float) :
+  List.length first_argument > 0 implies_
+  Hashtbl.length second_argument > 0 implies_
+  third > 0. implies_
+  some_function first_argument second_argument third = expected_result
+
+law_? long_conclusion (x : int) :
+  some_function_with_a_long_name x (another_function x)
+  = some_other_function_with_a_long_name x
+
+(* Comments *)
+
+law_? (* c1 *) commented (* c2 *) x (* c3 *) (y (* c4 *) : (* c5 *) int) :
+  (* c6 *) x (* c7 *) implies_ (* c8 *) y (* c9 *)

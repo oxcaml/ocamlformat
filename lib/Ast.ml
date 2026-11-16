@@ -421,6 +421,7 @@ module Structure_item = struct
      |Pstr_type (_, {ptype_attributes= atrs; _} :: _)
      |Pstr_typext {ptyext_attributes= atrs; _}
      |Pstr_jkind {pjkind_attributes= atrs; _}
+     |Pstr_law {plaw_attributes= atrs; _}
      |Pstr_recmodule ({pmb_expr= {pmod_attributes= atrs; _}; _} :: _)
      |Pstr_open {popen_attributes= atrs; _}
      |Pstr_extension (_, atrs)
@@ -478,6 +479,7 @@ module Structure_item = struct
        |Pstr_primitive _, Pstr_primitive _
        |(Pstr_type _ | Pstr_typext _), (Pstr_type _ | Pstr_typext _)
        |Pstr_jkind _, Pstr_jkind _
+       |Pstr_law _, Pstr_law _
        |Pstr_exception _, Pstr_exception _
        |( (Pstr_module _ | Pstr_recmodule _ | Pstr_open _ | Pstr_include _)
         , (Pstr_module _ | Pstr_recmodule _ | Pstr_open _ | Pstr_include _) )
@@ -519,6 +521,7 @@ module Signature_item = struct
      |Psig_typesubst ({ptype_attributes= atrs; _} :: _)
      |Psig_typext {ptyext_attributes= atrs; _}
      |Psig_jkind {pjkind_attributes= atrs; _}
+     |Psig_law {plaw_attributes= atrs; _}
      |Psig_open {popen_attributes= atrs; _}
      |Psig_extension (_, atrs)
      |Psig_class_type ({pci_attributes= atrs; _} :: _)
@@ -573,6 +576,7 @@ module Signature_item = struct
        |( (Psig_type _ | Psig_typesubst _ | Psig_typext _)
         , (Psig_type _ | Psig_typesubst _ | Psig_typext _) )
        |Psig_jkind _, Psig_jkind _
+       |Psig_law _, Psig_law _
        |Psig_exception _, Psig_exception _
        |( ( Psig_module _ | Psig_modsubst _ | Psig_recmodule _ | Psig_open _
           | Psig_include _ )
@@ -734,6 +738,7 @@ module T = struct
     | Typ of core_type
     | Td of type_declaration
     | Kd of jkind_declaration
+    | Law of law_declaration
     | Tyv of ty_var
     | Cty of class_type
     | Pat of pattern
@@ -760,6 +765,7 @@ module T = struct
     | Typ t -> Format.fprintf fs "Typ:@\n%a" Printast.core_type t
     | Td t -> Format.fprintf fs "Td:@\n%a" Printast.type_declaration t
     | Kd k -> Format.fprintf fs "Kd:@\n%a" (Printast.jkind_declaration 0) k
+    | Law l -> Format.fprintf fs "Law:@\n%a" (Printast.law_declaration 0) l
     | Tyv v -> Format.fprintf fs "Tyv:@\n%a" (Printast.typevar 0) v
     | Pat p -> Format.fprintf fs "Pat:@\n%a" Printast.pattern p
     | Exp e -> Format.fprintf fs "Exp:@\n%a" Printast.expression e
@@ -800,6 +806,7 @@ let attributes = function
   | Typ x -> x.ptyp_attributes
   | Td x -> x.ptype_attributes
   | Kd x -> x.pjkind_attributes
+  | Law x -> x.plaw_attributes
   | Tyv _ -> []
   | Cty x -> x.pcty_attributes
   | Pat x -> x.ppat_attributes
@@ -826,6 +833,7 @@ let location = function
   | Typ x -> x.ptyp_loc
   | Td x -> x.ptype_loc
   | Kd x -> x.pjkind_loc
+  | Law x -> x.plaw_loc
   | Tyv _ -> Location.none
   | Cty x -> x.pcty_loc
   | Pat x -> x.ppat_loc
@@ -1092,6 +1100,9 @@ end = struct
              | _ -> false )
           || Option.exists ptype_manifest ~f )
     | Kd _ -> assert false
+    | Law {plaw_params; _} ->
+        assert (
+          List.exists plaw_params ~f:(fun (_, t) -> Option.exists t ~f ) )
     | Tyv _ -> assert false
     | Cty {pcty_desc; _} ->
         assert (
@@ -1287,6 +1298,7 @@ end = struct
     | Typ _ -> assert false
     | Td _ -> assert false
     | Kd _ -> assert false
+    | Law _ -> assert false
     | Tyv _ -> assert false
     | Pat _ -> assert false
     | Cl ctx ->
@@ -1350,6 +1362,7 @@ end = struct
     | Typ _ -> assert false
     | Td _ -> assert false
     | Kd _ -> assert false
+    | Law _ -> assert false
     | Tyv _ -> assert false
     | Pat _ -> assert false
     | Cl {pcl_desc; _} ->
@@ -1431,6 +1444,7 @@ end = struct
       | _ -> assert false )
     | Td _ -> assert false
     | Kd _ -> assert false
+    | Law _ -> assert false
     | Tyv _ -> assert false
     | Pat ctx -> (
         let f pI = pI == pat in
@@ -1652,7 +1666,7 @@ end = struct
                 pvb_expr == exp ) )
       | Pstr_extension ((_, ext), _) -> assert (check_extensions ext)
       | Pstr_primitive _ | Pstr_type _ | Pstr_typext _ | Pstr_jkind _
-       |Pstr_exception _ | Pstr_module _ | Pstr_recmodule _
+       |Pstr_law _ | Pstr_exception _ | Pstr_module _ | Pstr_recmodule _
        |Pstr_modtype _ | Pstr_open _ | Pstr_class _ | Pstr_class_type _
        |Pstr_include _ | Pstr_attribute _ ->
           assert false )
@@ -1707,6 +1721,10 @@ end = struct
           | Pcf_inherit _ -> false
           | Pcf_constraint _ -> false
           | Pcf_attribute _ -> false )
+    | Law {plaw_assumptions; plaw_conclusion; _} ->
+        assert (
+          List.exists plaw_assumptions ~f:(fun e -> e == exp)
+          || plaw_conclusion == exp )
     | Ka _ | Mod _ | Top | Tli _ | Typ _ | Tyv _ | Pat _ | Mty _ | Sig _
      |Td _ | Kd _ | Rep ->
         assert false
@@ -1911,8 +1929,9 @@ end = struct
       match pcl_desc with Pcl_apply _ -> Some (Apply, Non) | _ -> None )
     | { ctx= Exp _
       ; ast=
-          ( Pld _ | Top | Tli _ | Kd _ | Tyv _ | Pat _ | Cl _ | Mty _ | Mod _
-          | Sig _ | Str _ | Clf _ | Ctf _ | Rep | Mb _ | Md _ | Ka _ ) }
+          ( Pld _ | Top | Tli _ | Kd _ | Law _ | Tyv _ | Pat _ | Cl _ | Mty _
+          | Mod _ | Sig _ | Str _ | Clf _ | Ctf _ | Rep | Mb _ | Md _ | Ka _
+            ) }
      |{ctx= Fp _; ast= _}
      |{ctx= _; ast= Fp _}
      |{ctx= Vc _; ast= _}
@@ -1923,16 +1942,17 @@ end = struct
      |{ctx= _; ast= Td _}
      |{ ctx= Cl _
       ; ast=
-          ( Pld _ | Top | Tli _ | Tyv _ | Kd _ | Pat _ | Mty _ | Mod _
-          | Sig _ | Str _ | Clf _ | Ctf _ | Rep | Mb _ | Md _ | Ka _ ) }
-     |{ ctx=
-          ( Pld _ | Top | Tli _ | Typ _ | Tyv _ | Kd _ | Cty _ | Pat _
-          | Mty _ | Mod _ | Sig _ | Str _ | Clf _ | Ctf _ | Rep | Mb _ | Md _
-          | Ka _ )
-      ; ast=
-          ( Pld _ | Top | Tli _ | Tyv _ | Kd _ | Pat _ | Exp _ | Cl _ | Mty _
+          ( Pld _ | Top | Tli _ | Tyv _ | Kd _ | Law _ | Pat _ | Mty _
           | Mod _ | Sig _ | Str _ | Clf _ | Ctf _ | Rep | Mb _ | Md _ | Ka _
-            ) } ->
+            ) }
+     |{ ctx=
+          ( Pld _ | Top | Tli _ | Typ _ | Tyv _ | Kd _ | Law _ | Cty _
+          | Pat _ | Mty _ | Mod _ | Sig _ | Str _ | Clf _ | Ctf _ | Rep
+          | Mb _ | Md _ | Ka _ )
+      ; ast=
+          ( Pld _ | Top | Tli _ | Tyv _ | Kd _ | Law _ | Pat _ | Exp _ | Cl _
+          | Mty _ | Mod _ | Sig _ | Str _ | Clf _ | Ctf _ | Rep | Mb _ | Md _
+          | Ka _ ) } ->
         None
 
   (** [prec_ast ast] is the precedence of [ast]. Meaningful for binary
@@ -1956,6 +1976,7 @@ end = struct
     | Td _ -> None
     | Tyv _ -> None
     | Kd _ -> None
+    | Law _ -> None
     | Cty {pcty_desc; _} -> (
       match pcty_desc with Pcty_arrow _ -> Some MinusGreater | _ -> None )
     | Exp {pexp_desc; _} -> (
@@ -2554,6 +2575,11 @@ end = struct
     ||
     match (ctx, exp) with
     | Str {pstr_desc= Pstr_eval _; _}, _ -> false
+    | Law {plaw_conclusion; _}, _ when plaw_conclusion == exp ->
+        (* Each clause of a law is parsed as an [expr], not a [seq_expr], so
+           sequences must be parenthesized. *)
+        Exp.is_sequence exp
+    | Law _, _ -> exposed_right_exp Non_apply exp
     | ( Exp
           { pexp_desc=
               Pexp_apply

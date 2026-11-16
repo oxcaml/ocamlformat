@@ -110,6 +110,7 @@ type t =
   | Typ of core_type
   | Td of type_declaration
   | Kd of jkind_declaration
+  | Law of law_declaration
   | Tyv of ty_var
   | Cty of class_type
   | Pat of pattern

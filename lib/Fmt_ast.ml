@@ -4341,6 +4341,54 @@ and fmt_jkind_declaration c ?(pre = noop) ?name ?(eq = "=") {ast= decl; _} =
            $ fmt_item_attributes c ~pre:(Break (1, 0)) attrs )
        $ doc_after )
 
+(* [law_? name p1 ... pn : A1 implies_ ... implies_ Ak implies_ C] *)
+and fmt_law_declaration c decl =
+  protect c (Law decl)
+  @@
+  let { plaw_name= {txt= name; loc= name_loc}
+      ; plaw_params
+      ; plaw_assumptions
+      ; plaw_conclusion
+      ; plaw_attributes
+      ; plaw_loc } =
+    decl
+  in
+  update_config_maybe_disabled c plaw_loc plaw_attributes
+  @@ fun c ->
+  let ctx = Law decl in
+  let doc_before, doc_after, atrs =
+    fmt_docstring_around_item c plaw_attributes
+  in
+  let fmt_param ({txt; loc}, ty) =
+    match ty with
+    | None -> Cmts.fmt c loc (str txt)
+    | Some ty ->
+        hvbox 1
+          ( str "("
+          $ Cmts.fmt c loc (str txt)
+          $ str " :" $ fmt "@ "
+          $ fmt_core_type c (sub_typ ~ctx ty)
+          $ str ")" )
+  in
+  let fmt_clause e = fmt_expression c (sub_exp ~ctx e) in
+  let fmt_assumption e = hvbox 0 (fmt_clause e $ str " implies_") in
+  Cmts.fmt c plaw_loc
+  @@ hvbox 0
+       ( doc_before
+       $ hvbox 2
+           ( hovbox 4
+               ( str "law_? "
+               $ Cmts.fmt c name_loc (str name)
+               $ list plaw_params "" (fun p -> fmt "@ " $ fmt_param p)
+               $ str " :" )
+           $ fmt "@ "
+           $ hvbox 0
+               ( list plaw_assumptions "" (fun e ->
+                     fmt_assumption e $ fmt "@ " )
+               $ fmt_clause plaw_conclusion ) )
+       $ fmt_item_attributes c ~pre:(Break (1, 0)) atrs
+       $ doc_after )
+
 and fmt_type_exception ~pre c ctx
     {ptyexn_attributes; ptyexn_constructor; ptyexn_loc} =
   let doc1, atrs = doc_atrs ptyexn_attributes in
@@ -4642,6 +4690,7 @@ and fmt_signature_item c ?ext {ast= si; _} =
   | Psig_typext te -> fmt_type_extension ?ext c ctx te
   | Psig_jkind kd ->
       fmt_jkind_declaration c ~pre:(str "kind_") (sub_kd ~ctx kd)
+  | Psig_law ld -> fmt_law_declaration c ld
   | Psig_value vd -> fmt_value_description ?ext c ctx vd
   | Psig_class cl -> fmt_class_types ?ext c ctx ~pre:"class" ~sep:":" cl
   | Psig_class_type cl ->
@@ -5268,6 +5317,7 @@ and fmt_structure_item c ~last:last_item ?ext ~semisemi
   | Pstr_typext te -> fmt_type_extension ?ext c ctx te
   | Pstr_jkind kd ->
       fmt_jkind_declaration c ~pre:(str "kind_") (sub_kd ~ctx kd)
+  | Pstr_law ld -> fmt_law_declaration c ld
   | Pstr_value
       { pvbs_mutable= mutable_flag
       ; pvbs_rec= rec_flag
