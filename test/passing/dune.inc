@@ -597,6 +597,44 @@
  (deps tests/.ocamlformat )
  (package ocamlformat)
  (action
+  (with-stdout-to block_indices_bad_paren.ml.stdout
+   (with-stderr-to block_indices_bad_paren.ml.stderr
+     (with-accepted-exit-codes 1
+       (setenv TERM dumb (run %{bin:ocamlformat} --margin-check %{dep:tests/block_indices_bad_paren.ml})))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/block_indices_bad_paren.ml.ref block_indices_bad_paren.ml.stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/block_indices_bad_paren.ml.err block_indices_bad_paren.ml.stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
+  (with-stdout-to block_indices_bad_paren.ml.js-stdout
+   (with-stderr-to block_indices_bad_paren.ml.js-stderr
+     (with-accepted-exit-codes 1
+       (setenv TERM dumb (run %{bin:ocamlformat} --profile=janestreet --enable-outside-detected-project --disable-conf-files %{dep:tests/block_indices_bad_paren.ml})))))))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/block_indices_bad_paren.ml.js-ref block_indices_bad_paren.ml.js-stdout)))
+
+(rule
+ (alias runtest)
+ (package ocamlformat)
+ (action (diff tests/block_indices_bad_paren.ml.js-err block_indices_bad_paren.ml.js-stderr)))
+
+(rule
+ (deps tests/.ocamlformat )
+ (package ocamlformat)
+ (action
   (with-stdout-to borrow-erased.ml.stdout
    (with-stderr-to borrow-erased.ml.stderr
      (setenv TERM dumb (run %{bin:ocamlformat} --margin-check --erase-jane-syntax --max-iters=3 %{dep:tests/borrow.ml}))))))

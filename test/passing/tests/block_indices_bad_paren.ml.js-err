@@ -1,0 +1,5 @@
+main: ignoring "tests/block_indices_bad_paren.ml" (syntax error)
+File "tests/block_indices_bad_paren.ml", line 1, characters 17-18:
+1 | let x = (.idx_foo(y))
+                     ^
+Error: Syntax error: A parenthesis here can only follow ".idx_imm", ".idx_mut", or ".idx_atomic".

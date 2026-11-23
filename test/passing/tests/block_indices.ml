@@ -45,3 +45,12 @@ let idx_r () = (* 01 *) ( (* 02 *) . (* 03 *) foo (* 04 *) ) (* 05 *)
 let idx_r_r () = (* 06 *) ( (* 07 *) . (* 08 *) foo (* 09 *) .# (* 10 *) foo (* 11 *) ) (* 12 *)
 let idx_imm x = ( (* 32 *) .idx_imm (* 33 *) ( (* 34 *) x (* 35 *)) (* 36 *))
 let idx_mut x = ( (* 37 *) .idx_mut (* 38 *) ( (* 39 *) x (* 40 *)) (* 41 *))
+
+(* atomic *)
+
+let idx_atomic x = (.idx_atomic(x))
+let idx_atomic x = (.idx_atomic(x).#foo.#bar)
+let idx_atomic x = (.idx_atomic(if x then y else z))
+let idx_atomic x = !(.idx_atomic(x))
+let idx_atomic x = (.idx_atomic(x)) [@attr]
+let idx_atomic x = ( (* 42 *) .idx_atomic (* 43 *) ( (* 44 *) x (* 45 *)) (* 46 *))
