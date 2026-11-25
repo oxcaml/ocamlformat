@@ -4382,11 +4382,16 @@ and fmt_functor_param c ctx {loc; txt= arg} =
 
 (* Formats the module type [xmty] followed by the modes [modals], which the
    parser only accepts after an atomic module type. *)
-and fmt_module_type_with_modes c ?rec_ xmty modals =
-  let blk = fmt_module_type c ?rec_ xmty in
+and fmt_module_type_with_modes c ?(rec_ = false) xmty modals =
+  let blk = fmt_module_type c ~rec_ xmty in
   let parens =
     match xmty.ast.pmty_desc with
-    | Pmty_ident _ | Pmty_signature _ -> false
+    | Pmty_ident _ | Pmty_signature _ ->
+        (* Attributes are printed last: [(S [@a]) @ m]. *)
+        not (List.is_empty xmty.ast.pmty_attributes)
+    | Pmty_with _ when rec_ ->
+        (* Already parenthesized by [fmt_module_type]. *)
+        false
     | _ -> true
   in
   match blk.pro with
