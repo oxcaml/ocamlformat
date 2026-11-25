@@ -1,0 +1,226 @@
+(* modes on functor parameters *)
+
+module F (M : S) = struct end
+
+module F (M : S) (M' : S) = struct end
+
+module F (M : S) (M' : S) = struct end
+
+module F (M : S) (M' : S) : T = struct
+  let g = M.f
+end
+
+module F (M : S) (_ : S) () = struct end
+
+module F (M : S) = M
+
+module F (M : sig
+  val f : unit -> unit
+end) =
+struct end
+
+module F (X : sig
+  val x : int
+end) (Y : sig
+  val y : int
+end) =
+struct end
+
+module F
+    (X : sig
+      val x : int
+    end)
+    (Y : S) =
+struct end
+
+(* long syntax *)
+
+module F : functor (_ : S) -> T =
+functor
+  (M : S)
+  ->
+  struct
+    let g = M.f
+  end
+
+module F : functor (M : S) () -> sig end = functor (M : S) () -> struct end
+
+module F (M : S) : functor () -> sig end = functor () -> struct end
+
+module F1 (M1 : S) : functor () -> sig end = functor () -> struct end
+
+module M =
+  (functor
+    (M : sig
+       val f : unit -> unit
+     end)
+    ->
+    struct end)
+    (X)
+
+(* module types *)
+
+module type FT = functor (_ : S) -> T
+
+module type FT = functor (_ : S) (_ : S) -> T
+
+module type FT = functor (M : S) -> T
+
+module type FT = functor (M : S) (N : S) -> T
+
+module type FT = functor (M : S) (N : S) -> T
+
+module type FT = functor (M : S) (N : S) -> T
+
+module type FT = functor (M : S) -> sig
+  val f : unit -> unit
+end
+
+module type FT = functor
+  (M : sig
+     val f : unit -> unit
+   end)
+  -> T
+
+module type FT = functor (_ : functor () () -> sig end) -> sig end
+
+module type FT = functor (_ : S with type t = int) -> S with type t = int
+
+module type FT = functor (_ : module type of M) -> S with M
+
+module type FT = functor (_ : functor (_ : S) -> S) (_ : S) -> S
+
+module type Portable_Portable = sig
+  module F : functor (M : S) -> T
+end
+
+module type SigWithModalFunctor2 = sig
+  module F : functor (_ : S) -> S
+end
+
+(* module types that must be parenthesized to be followed by modes *)
+
+module F (K : functor () () -> sig end) = struct
+  module K' = K ()
+end
+
+module F (M : functor (_ : S) -> S) : functor (_ : S) -> S = M
+
+module F
+    (M : functor (_ : functor (_ : S) -> S) -> S) : functor
+  (_ : functor (_ : S) -> S)
+  -> S =
+  M
+
+module F (M : functor (_ : S) -> S) : functor (_ : S) -> S = M
+
+module F (M : S with type t = int) = struct end
+
+module F (M : module type of N) = struct end
+
+module F (M : S with N) = struct end
+
+module M : functor (_ : S) -> S = F
+
+module M = (F : functor (_ : S) -> S) (X)
+
+module M = F ((M : S))
+
+module M = F ((
+  M :
+    sig
+      type t
+    end ))
+
+(* let module *)
+
+let () =
+  let module F (M : S) = struct end in
+  ()
+
+let () =
+  let module F (M : S) (N : S) : T = struct end in
+  ()
+
+let () =
+  let module F () = functor () -> struct end in
+  let module M' = F () in
+  ()
+
+let () =
+  let module F (M : functor (_ : S) -> S) = struct end in
+  ()
+
+(* long lines *)
+
+module Mmmmmmmmmmmmmmmmmmmmmmmmmmmm (X : Sssssssssssssssssssssssssssss) :
+  Sssssssssssssssssssssssssssssssssssssss =
+  M
+
+module type FT = functor (_ : Ssssssssssssssssssssssssssssssssssssssssss) ->
+  Tttttttttttttttt
+
+module type FT = functor (_ : Ssssssssssssssssssssssssssssssssssssssssss) ->
+  Tttttttttttttttt with type t = int
+
+module type FT = functor (_ : Ssssssssssssssssssssssssssssssssssssssssss) ->
+  Tttttttttttttttt
+
+module type FT = functor
+  (Xxxxxxxxxxxxxxxxx : Ssssssssssssssssssssssssssssssssssssssssss)
+  -> Tttttttttttttttt
+
+(* comments *)
+
+module F
+    ((* 1 *)
+    M
+    (* 2 *) : (* 3 *)
+    S
+    (* 4 *)
+    (* 5 *)
+    (* 6 *)) : (* 8 *) T (* 9 *) =
+(* 7 *)
+(* 10 *)
+(* 11 *) struct end
+
+module type FT = (* 1 *)
+functor
+  (* 2 *)
+  ((* 3 *) M (* 4 *) : (* 5 *) S
+   (* 6 *)
+   (* 7 *)
+   (* 8 *))
+  (* 9 *)
+  -> (* 10 *) T (* 11 *)
+
+(* 12 *)
+(* 13 *)
+
+module type FT = functor
+  (_ : S
+   (* 1 *)
+   (* 2 *))
+  (* 3 *)
+  -> (* 4 *) T (* 5 *)
+
+(* 6 *)
+(* 7 *)
+
+(* parens in rec *)
+
+module rec M : (S with type t = int) = N
+
+(* attributes *)
+
+module F (M : S [@a]) = struct end
+
+module F (M : sig end [@a]) = struct end
+
+module F (M : sig end [@a]) = struct end
+
+module type T = functor (M : S) -> S [@a]
+
+module M : S [@a] = N
+
+module M : S [@a] = N
